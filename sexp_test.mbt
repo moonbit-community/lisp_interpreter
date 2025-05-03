@@ -1,0 +1,73 @@
+// use sexp::*
+///|
+test "tokenize" {
+  let input = "(hello world)"
+  let tokens = tokenize(input)
+  @json.inspect!(tokens, content=["(", "hello", "world", ")"])
+}
+
+///|
+test "parse simple" {
+  let input = "(hello world)"
+  let result = parse_sexp!(input)
+  @json.inspect!(result, content={
+    "$tag": "List",
+    "0": [{ "$tag": "Atom", "0": "hello" }, { "$tag": "Atom", "0": "world" }],
+  })
+}
+
+///|
+test "parse nested" {
+  let input = "(define (square x) (* x x))"
+  let result = parse_sexp!(input)
+  @json.inspect!(result, content={
+    "$tag": "List",
+    "0": [
+      { "$tag": "Atom", "0": "define" },
+      {
+        "$tag": "List",
+        "0": [{ "$tag": "Atom", "0": "square" }, { "$tag": "Atom", "0": "x" }],
+      },
+      {
+        "$tag": "List",
+        "0": [
+          { "$tag": "Atom", "0": "*" },
+          { "$tag": "Atom", "0": "x" },
+          { "$tag": "Atom", "0": "x" },
+        ],
+      },
+    ],
+  })
+}
+
+///|
+test "parse error" {
+  let input = "(hello (world"
+  inspect!(
+    parse_sexp?(input),
+    content=
+      #|Err(UnmatchedParens("missing closing parenthesis"))
+    ,
+  )
+}
+
+///|
+test "parse empty" {
+  let input = ""
+  @json.inspect!(parse_sexp?(input), content={
+    "Err": { "$tag": "UnexpectedEOF" },
+  })
+}
+
+///|
+test "parse parens" {
+  let input = "(hello (world))"
+  let result = parse_sexp!(input)
+  @json.inspect!(result, content={
+    "$tag": "List",
+    "0": [
+      { "$tag": "Atom", "0": "hello" },
+      { "$tag": "List", "0": [{ "$tag": "Atom", "0": "world" }] },
+    ],
+  })
+}

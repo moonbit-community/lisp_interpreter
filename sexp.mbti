@@ -1,0 +1,24 @@
+package "bobzhang/sexp"
+
+// Values
+fn parse_sexp(String) -> Sexp!ParseError
+
+fn tokenize(String) -> Array[String]
+
+// Types and methods
+type ParseError
+impl Show for ParseError
+impl ToJson for ParseError
+
+pub(all) enum Sexp {
+  Atom(String)
+  List(Array[Sexp])
+}
+impl Eq for Sexp
+impl Show for Sexp
+impl ToJson for Sexp
+
+// Type aliases
+
+// Traits
+
