@@ -27,29 +27,50 @@ fn parse_tokens(
 ) -> (Sexp, @array.View[@string.View])!ParseError {
   match tokens {
     [] => raise ParseError::UnexpectedEOF
-    [token, .. rest] =>
-      if token == "(" {
-        let subexps = Array::new()
-        let mut curr_tokens = rest
-        while curr_tokens.length() > 0 && curr_tokens[0] != ")" {
-          let (subexp, remaining) = parse_tokens!(curr_tokens)
-          subexps.push(subexp)
-          curr_tokens = remaining
-        }
-        if curr_tokens.length() == 0 {
-          raise ParseError::UnmatchedParens("missing closing parenthesis")
-        }
-        let remaining_view = curr_tokens[1:]
-        let remaining = Array::new()
-        for t in remaining_view {
-          remaining.push(t)
-        }
-        (Sexp::List(subexps), remaining)
-      } else if token == ")" {
-        raise ParseError::UnexpectedParens("unexpected closing parenthesis")
-      } else {
-        (Sexp::Atom(token.to_string()), rest)
+    ["(", .. rest] => {
+      let subexps = Array::new()
+      let mut curr_tokens = rest
+      while curr_tokens.length() > 0 && curr_tokens[0] != ")" {
+        let (subexp, remaining) = parse_tokens!(curr_tokens)
+        subexps.push(subexp)
+        curr_tokens = remaining
       }
+      if curr_tokens.length() == 0 {
+        raise ParseError::UnmatchedParens("missing closing parenthesis")
+      }
+      let remaining_view = curr_tokens[1:]
+      let remaining = Array::new()
+      for t in remaining_view {
+        remaining.push(t)
+      }
+      (Sexp::List(subexps), remaining)
+    }
+    [")", ..] =>
+      raise ParseError::UnexpectedParens("unexpected closing parenthesis")
+    [token, .. rest] => (Sexp::Atom(token.to_string()), rest)
+    // [token, .. rest] =>
+    //   if token == "(" {
+    //     let subexps = Array::new()
+    //     let mut curr_tokens = rest
+    //     while curr_tokens.length() > 0 && curr_tokens[0] != ")" {
+    //       let (subexp, remaining) = parse_tokens!(curr_tokens)
+    //       subexps.push(subexp)
+    //       curr_tokens = remaining
+    //     }
+    //     if curr_tokens.length() == 0 {
+    //       raise ParseError::UnmatchedParens("missing closing parenthesis")
+    //     }
+    //     let remaining_view = curr_tokens[1:]
+    //     let remaining = Array::new()
+    //     for t in remaining_view {
+    //       remaining.push(t)
+    //     }
+    //     (Sexp::List(subexps), remaining)
+    //   } else if token == ")" {
+    //     raise ParseError::UnexpectedParens("unexpected closing parenthesis")
+    //   } else {
+    //     (Sexp::Atom(token.to_string()), rest)
+    //   }
   }
 }
 
