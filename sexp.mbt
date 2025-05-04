@@ -65,9 +65,8 @@ pub fn tokenize(input : @string.View) -> Array[@string.View] {
             tokens.push(oid.view(end_offset=count))
             continue outer~ id
           }
-          [_, .. rest] =>
-            // count += 1 // this is incorrect, we should use the offset
-            continue rest, count + 1
+          [c, .. rest] =>
+            continue rest, count + (if c > '\u{ffff}' { 2 } else { 1 })
         }
       }
   }

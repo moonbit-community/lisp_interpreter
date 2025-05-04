@@ -24,6 +24,20 @@ test "tokenize" {
 }
 
 ///|
+test "tokenize unicode" {
+  let input = "(你好 世界)"
+  let tokens = tokenize(input)
+  @json.inspect!(tokens, content=["(", "你好", "世界", ")"])
+}
+
+///|
+test "tokenize unicode emoji" {
+  let input = "(👋🏻 世界)"
+  let tokens = tokenize(input)
+  @json.inspect!(tokens, content=["(", "👋🏻", "世界", ")"])
+}
+
+///|
 test "parse simple" {
   let input = "(hello world)"
   let result = parse_sexp!(input)
