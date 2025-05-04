@@ -29,42 +29,18 @@ fn parse_tokens(
     [] => raise UnexpectedEOF
     ["(", .. rest] => {
       let subexps = []
-      let mut curr_tokens = rest
-      while curr_tokens is [next, .. _] && next != ")" {
-        let (subexp, remaining) = parse_tokens!(curr_tokens)
-        subexps.push(subexp)
-        curr_tokens = remaining
+      loop rest {
+        [] => raise UnmatchedParens("missing closing parenthesis")
+        [")", .. rest] => (List(subexps), rest)
+        _ as r => {
+          let (subexp, remaining) = parse_tokens!(r)
+          subexps.push(subexp)
+          continue remaining
+        }
       }
-      guard curr_tokens is [_, .. remaining_view] else {
-        raise UnmatchedParens("missing closing parenthesis")
-      }
-      (Sexp::List(subexps), remaining_view)
     }
     [")", ..] => raise UnexpectedParens("unexpected closing parenthesis")
     [token, .. rest] => (Sexp::Atom(token.to_string()), rest)
-    // [token, .. rest] =>
-    //   if token == "(" {
-    //     let subexps = Array::new()
-    //     let mut curr_tokens = rest
-    //     while curr_tokens.length() > 0 && curr_tokens[0] != ")" {
-    //       let (subexp, remaining) = parse_tokens!(curr_tokens)
-    //       subexps.push(subexp)
-    //       curr_tokens = remaining
-    //     }
-    //     if curr_tokens.length() == 0 {
-    //       raise ParseError::UnmatchedParens("missing closing parenthesis")
-    //     }
-    //     let remaining_view = curr_tokens[1:]
-    //     let remaining = Array::new()
-    //     for t in remaining_view {
-    //       remaining.push(t)
-    //     }
-    //     (Sexp::List(subexps), remaining)
-    //   } else if token == ")" {
-    //     raise ParseError::UnexpectedParens("unexpected closing parenthesis")
-    //   } else {
-    //     (Sexp::Atom(token.to_string()), rest)
-    //   }
   }
 }
 
@@ -81,10 +57,6 @@ pub fn tokenize(input : @string.View) -> Array[@string.View] {
       tokens.push(")")
       continue rest
     }
-    // [ .. "("  , .. rest] we need support 
-    // [ .. "xx" as c ] so that we can get the view
-    // but it is constant so it does not matter that much?
-
     [' ' | '\n' | '\t', .. rest] => continue rest
     [_, ..] as oid =>
       for id = oid, count = 0 {
@@ -101,3 +73,18 @@ pub fn tokenize(input : @string.View) -> Array[@string.View] {
   }
   tokens
 }
+
+// [ .. "("  , .. rest] we need support 
+// [ .. "xx" as c ] so that we can get the view
+// but it is constant so it does not matter that much?
+// let mut curr_tokens = rest
+// while curr_tokens is [next, .. _] && next != ")" {
+//   let (subexp, remaining) = parse_tokens!(curr_tokens)
+//   subexps.push(subexp)
+//   curr_tokens = remaining
+// }
+// TODO: finish for loop is scope issue
+// guard curr_tokens is [_, .. remaining_view] else {
+//   raise UnmatchedParens("missing closing parenthesis")
+// }
+// (Sexp::List(subexps), remaining_view)
