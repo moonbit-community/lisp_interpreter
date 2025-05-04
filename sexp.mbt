@@ -26,27 +26,21 @@ fn parse_tokens(
   tokens : @array.View[@string.View]
 ) -> (Sexp, @array.View[@string.View])!ParseError {
   match tokens {
-    [] => raise ParseError::UnexpectedEOF
+    [] => raise UnexpectedEOF
     ["(", .. rest] => {
-      let subexps = Array::new()
+      let subexps = []
       let mut curr_tokens = rest
-      while curr_tokens.length() > 0 && curr_tokens[0] != ")" {
+      while curr_tokens is [next, .. _] && next != ")" {
         let (subexp, remaining) = parse_tokens!(curr_tokens)
         subexps.push(subexp)
         curr_tokens = remaining
       }
-      if curr_tokens.length() == 0 {
-        raise ParseError::UnmatchedParens("missing closing parenthesis")
+      guard curr_tokens is [_, .. remaining_view] else {
+        raise UnmatchedParens("missing closing parenthesis")
       }
-      let remaining_view = curr_tokens[1:]
-      let remaining = Array::new()
-      for t in remaining_view {
-        remaining.push(t)
-      }
-      (Sexp::List(subexps), remaining)
+      (Sexp::List(subexps), remaining_view)
     }
-    [")", ..] =>
-      raise ParseError::UnexpectedParens("unexpected closing parenthesis")
+    [")", ..] => raise UnexpectedParens("unexpected closing parenthesis")
     [token, .. rest] => (Sexp::Atom(token.to_string()), rest)
     // [token, .. rest] =>
     //   if token == "(" {
