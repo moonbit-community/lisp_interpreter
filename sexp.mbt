@@ -23,38 +23,33 @@ pub fn parse_sexp(input : String) -> Sexp!ParseError {
 
 ///|
 fn parse_tokens(
-  tokens : Array[@string.View]
-) -> (Sexp, Array[@string.View])!ParseError {
-  if tokens.length() == 0 {
-    raise ParseError::UnexpectedEOF
-  }
-  let token = tokens[0]
-  let rest_view = tokens[1:]
-  let rest = Array::new()
-  for t in rest_view {
-    rest.push(t)
-  }
-  if token == "(" {
-    let subexps = Array::new()
-    let mut curr_tokens = rest
-    while curr_tokens.length() > 0 && curr_tokens[0] != ")" {
-      let (subexp, remaining) = parse_tokens!(curr_tokens)
-      subexps.push(subexp)
-      curr_tokens = remaining
-    }
-    if curr_tokens.length() == 0 {
-      raise ParseError::UnmatchedParens("missing closing parenthesis")
-    }
-    let remaining_view = curr_tokens[1:]
-    let remaining = Array::new()
-    for t in remaining_view {
-      remaining.push(t)
-    }
-    (Sexp::List(subexps), remaining)
-  } else if token == ")" {
-    raise ParseError::UnexpectedParens("unexpected closing parenthesis")
-  } else {
-    (Sexp::Atom(token.to_string()), rest)
+  tokens : @array.View[@string.View]
+) -> (Sexp, @array.View[@string.View])!ParseError {
+  match tokens {
+    [] => raise ParseError::UnexpectedEOF
+    [token, .. rest] =>
+      if token == "(" {
+        let subexps = Array::new()
+        let mut curr_tokens = rest
+        while curr_tokens.length() > 0 && curr_tokens[0] != ")" {
+          let (subexp, remaining) = parse_tokens!(curr_tokens)
+          subexps.push(subexp)
+          curr_tokens = remaining
+        }
+        if curr_tokens.length() == 0 {
+          raise ParseError::UnmatchedParens("missing closing parenthesis")
+        }
+        let remaining_view = curr_tokens[1:]
+        let remaining = Array::new()
+        for t in remaining_view {
+          remaining.push(t)
+        }
+        (Sexp::List(subexps), remaining)
+      } else if token == ")" {
+        raise ParseError::UnexpectedParens("unexpected closing parenthesis")
+      } else {
+        (Sexp::Atom(token.to_string()), rest)
+      }
   }
 }
 
@@ -76,21 +71,18 @@ pub fn tokenize(input : @string.View) -> Array[@string.View] {
     // but it is constant so it does not matter that much?
 
     [' ' | '\n' | '\t', .. rest] => continue rest
-    [_, ..] as oid => {
-      for id = oid, count = 0  {
-        match id {  
-        [] | ['(' | ')' | ' ' | '\n' | '\t', ..]  => {
-          tokens.push(oid.view(end_offset=count))
-          continue outer~ id
-        }
-        [_, .. rest] => {
-          // count += 1 // this is incorrect, we should use the offset
-          continue rest, count + 1
+    [_, ..] as oid =>
+      for id = oid, count = 0 {
+        match id {
+          [] | ['(' | ')' | ' ' | '\n' | '\t', ..] => {
+            tokens.push(oid.view(end_offset=count))
+            continue outer~ id
           }
+          [_, .. rest] =>
+            // count += 1 // this is incorrect, we should use the offset
+            continue rest, count + 1
         }
       }
-    }
   }
-
   tokens
 }
