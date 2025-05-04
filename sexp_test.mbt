@@ -1,4 +1,33 @@
 // use sexp::*
+
+///|
+test "parse extra tokens" {
+  let input = "(hello) world"
+  @json.inspect!(
+    parse_sexp?(input),
+    content={
+      "Err": {
+        "$tag": "UnmatchedParens",
+        "0": "unexpected tokens at the end"
+      }
+    },
+  )
+}
+
+///|
+test "parse unexpected closing paren" {
+  let input = ")hello"
+  @json.inspect!(
+    parse_sexp?(input),
+    content={
+      "Err": {
+        "$tag": "UnexpectedParens",
+        "0": "unexpected closing parenthesis"
+      }
+    },
+  )
+}
+
 ///|
 test "tokenize" {
   let input = "(hello world)"
