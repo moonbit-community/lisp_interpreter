@@ -15,8 +15,8 @@ type! ParseError {
 pub fn parse_sexp(input : String) -> Sexp!ParseError {
   let tokens = tokenize(input)
   let (sexp, remaining) = parse_tokens!(tokens)
-  if remaining.length() > 0 {
-    raise ParseError::UnmatchedParens("unexpected tokens at the end")
+  guard remaining is [] else {
+    raise UnmatchedParens("unexpected tokens at the end")
   }
   sexp
 }
