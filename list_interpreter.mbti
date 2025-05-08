@@ -1,0 +1,27 @@
+package "bobzhang/sexp"
+
+// List interpreter interface
+
+pub(all) enum Value {
+  Number(Int)
+  Boolean(Bool)
+  Symbol(String)
+  Function(Array[String], Sexp, Environment)
+  BuiltinFunction(String)
+}
+impl Show for Value
+
+pub struct Environment {
+  bindings : Map[String, Value]
+}
+impl Show for Environment
+
+fn Environment::new() -> Environment
+fn Environment::set(Environment, String, Value) -> Unit
+fn Environment::get(Environment, String) -> Value?
+
+priv type EvalError
+impl Show for EvalError
+
+pub fn create_standard_env() -> Environment
+pub fn evaluate(Sexp) -> Sexp!Error

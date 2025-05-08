@@ -1,2 +1,2 @@
-can you help write some tests to increase its coverage?
-for error case, you can `inspect` the error message.
+can you help write a simple list interpreter based on our sexp parser, 
+you can add test first, and then implement the code.
