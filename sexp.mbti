@@ -1,11 +1,23 @@
 package "bobzhang/sexp"
 
+import(
+  "moonbitlang/core/string"
+)
+
 // Values
+fn create_standard_env() -> Environment
+
+fn evaluate(Sexp) -> Sexp!
+
 fn parse_sexp(String) -> Sexp!ParseError
 
-fn tokenize(String) -> Array[String]
+fn tokenize(@string.StringView) -> Array[@string.StringView]
 
 // Types and methods
+pub struct Environment {
+  bindings : Map[String, Value]
+}
+
 type ParseError
 impl Show for ParseError
 impl ToJson for ParseError
@@ -17,6 +29,14 @@ pub(all) enum Sexp {
 impl Eq for Sexp
 impl Show for Sexp
 impl ToJson for Sexp
+
+pub(all) enum Value {
+  Number(Int)
+  Boolean(Bool)
+  Symbol(String)
+  Function(Array[String], Sexp, Environment)
+  BuiltinFunction(String)
+}
 
 // Type aliases
 
