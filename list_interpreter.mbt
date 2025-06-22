@@ -34,7 +34,7 @@ fn Environment::get(self : Environment, key : String) -> Value? {
 }
 
 ///|
-priv type! EvalError {
+priv suberror EvalError {
   // NotAList(String)
   UnboundSymbol(String)
   NotAFunction(String)
@@ -76,14 +76,14 @@ pub fn create_standard_env() -> Environment {
 }
 
 ///|
-pub fn evaluate(expr : Sexp) -> Sexp!Error {
+pub fn evaluate(expr : Sexp) -> Sexp raise Error {
   let env = create_standard_env()
-  let result = eval!(expr, env)
+  let result = eval(expr, env)
   sexp_from_value(result)
 }
 
 ///|
-fn eval(expr : Sexp, env : Environment) -> Value!EvalError {
+fn eval(expr : Sexp, env : Environment) -> Value raise EvalError {
   match expr {
     // Atoms: handle literals and variables
     Sexp::Atom(token) => {
@@ -221,7 +221,7 @@ fn eval(expr : Sexp, env : Environment) -> Value!EvalError {
 }
 
 ///|
-fn string_to_int(s : String) -> Int!Failure {
+fn string_to_int(s : String) -> Int raise Failure {
   let mut result = 0
   let mut is_negative = false
   if s is ['-', ..] {
@@ -234,7 +234,7 @@ fn string_to_int(s : String) -> Int!Failure {
         let digit = char - '0'
         result = result * 10 + digit
       } else {
-        fail!("Invalid integer: " + s)
+        fail("Invalid integer: " + s)
       }
       i = i + 1
     }
@@ -247,7 +247,7 @@ fn string_to_int(s : String) -> Int!Failure {
         let digit = char - '0'
         result = result * 10 + digit
       } else {
-        fail!("Invalid integer: " + s)
+        fail("Invalid integer: " + s)
       }
       i = i + 1
     }
@@ -259,7 +259,7 @@ fn string_to_int(s : String) -> Int!Failure {
 }
 
 ///|
-fn apply(operator : Value, args : Array[Value]) -> Value!EvalError {
+fn apply(operator : Value, args : Array[Value]) -> Value raise EvalError {
   match operator {
     Value::Function(params, body, closure_env) => {
       // Create a new environment with the closure's environment as parent
