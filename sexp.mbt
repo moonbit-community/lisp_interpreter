@@ -5,16 +5,16 @@ pub(all) enum Sexp {
 } derive(Show, Eq, ToJson)
 
 ///|
-type! ParseError {
+suberror ParseError {
   UnmatchedParens(String)
   UnexpectedParens(String)
   UnexpectedEOF
 } derive(Show, ToJson)
 
 ///|
-pub fn parse_sexp(input : String) -> Sexp!ParseError {
+pub fn parse_sexp(input : String) -> Sexp raise ParseError {
   let tokens = tokenize(input)
-  let (sexp, remaining) = parse_tokens!(tokens)
+  let (sexp, remaining) = parse_tokens(tokens)
   guard remaining is [] else {
     raise UnmatchedParens("unexpected tokens at the end")
   }
@@ -24,7 +24,7 @@ pub fn parse_sexp(input : String) -> Sexp!ParseError {
 ///|
 fn parse_tokens(
   tokens : @array.View[@string.View]
-) -> (Sexp, @array.View[@string.View])!ParseError {
+) -> (Sexp, @array.View[@string.View]) raise ParseError {
   match tokens {
     [] => raise UnexpectedEOF
     ["(", .. rest] => {
@@ -33,7 +33,7 @@ fn parse_tokens(
         [] => raise UnmatchedParens("missing closing parenthesis")
         [")", .. rest] => (List(subexps), rest)
         _ as r => {
-          let (subexp, remaining) = parse_tokens!(r)
+          let (subexp, remaining) = parse_tokens(r)
           subexps.push(subexp)
           continue remaining
         }
