@@ -49,47 +49,47 @@ test "evaluate conditions" {
   // Test if expressions
   inspect(
     evaluate_string("(if (> 5 2) 1 0)"),
-    content=
+    content=(
       #|Atom("1")
-    ,
+    ),
   )
   inspect(
     evaluate_string("(if (< 5 2) 1 0)"),
-    content=
+    content=(
       #|Atom("0")
-    ,
+    ),
   )
   inspect(
     evaluate_string("(if (= 5 5) 1 0)"),
-    content=
+    content=(
       #|Atom("1")
-    ,
+    ),
   )
 
   // Test comparison and logical operators
   inspect(
     evaluate_string("(> 5 2)"),
-    content=
+    content=(
       #|Atom("true")
-    ,
+    ),
   ) // true represented as 1
   inspect(
     evaluate_string("(< 5 2)"),
-    content=
+    content=(
       #|Atom("false")
-    ,
+    ),
   ) // false represented as 0
   inspect(
     evaluate_string("(= 5 5)"),
-    content=
+    content=(
       #|Atom("true")
-    ,
+    ),
   )
   inspect(
     evaluate_string("(= 5 2)"),
-    content=
+    content=(
       #|Atom("false")
-    ,
+    ),
   )
 }
 

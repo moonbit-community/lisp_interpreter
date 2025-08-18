@@ -23,7 +23,7 @@ pub fn parse_sexp(input : String) -> Sexp raise ParseError {
 
 ///|
 fn parse_tokens(
-  tokens : @array.View[@string.View]
+  tokens : @array.View[@string.View],
 ) -> (Sexp, @array.View[@string.View]) raise ParseError {
   match tokens {
     [] => raise UnexpectedEOF

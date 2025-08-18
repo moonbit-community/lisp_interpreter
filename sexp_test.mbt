@@ -76,9 +76,9 @@ test "parse error" {
   let input = "(hello (world"
   inspect(
     try? parse_sexp(input),
-    content=
+    content=(
       #|Err(UnmatchedParens("missing closing parenthesis"))
-    ,
+    ),
   )
 }
 
