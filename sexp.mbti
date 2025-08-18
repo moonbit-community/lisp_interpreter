@@ -23,6 +23,7 @@ impl ToJson for ParseError
 pub struct Environment {
   bindings : Map[String, Value]
 }
+impl Show for Environment
 
 pub(all) enum Sexp {
   Atom(String)
@@ -39,6 +40,7 @@ pub(all) enum Value {
   Function(Array[String], Sexp, Environment)
   BuiltinFunction(String)
 }
+impl Show for Value
 
 // Type aliases
 
