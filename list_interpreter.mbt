@@ -14,7 +14,7 @@ pub struct Environment {
 
 ///| Implement Show for Environment to satisfy Value's Show derivation
 ///
-impl Show for Environment with output(_, logger) {
+pub impl Show for Environment with output(_, logger) {
   logger.write_string("{...}")
 }
 
@@ -44,7 +44,7 @@ priv suberror EvalError {
 
 ///| Implement Show for Value
 ///
-impl Show for Value with output(self, logger) {
+pub impl Show for Value with output(self, logger) {
   match self {
     Value::Number(n) => logger.write_string(n.to_string())
     Value::Boolean(b) => logger.write_string(b.to_string())
@@ -229,7 +229,7 @@ fn string_to_int(s : String) -> Int raise Failure {
     // Continue processing from index 1, skipping the '-' sign
     let mut i = 1
     while i < s.length() {
-      let char = s.charcode_at(i)
+      let char = s[i]
       if char is ('0'..='9') {
         let digit = char - '0'
         result = result * 10 + digit
@@ -242,7 +242,7 @@ fn string_to_int(s : String) -> Int raise Failure {
     // Process a positive number
     let mut i = 0
     while i < s.length() {
-      let char = s.charcode_at(i)
+      let char = s[i]
       if char is ('0'..='9') {
         let digit = char - '0'
         result = result * 10 + digit

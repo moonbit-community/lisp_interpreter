@@ -2,14 +2,14 @@
 pub(all) enum Sexp {
   Atom(String)
   List(Array[Sexp])
-} derive(Show, Eq, ToJson)
+} derive(Show, Eq, ToJson(style="legacy"))
 
 ///|
 suberror ParseError {
   UnmatchedParens(String)
   UnexpectedParens(String)
   UnexpectedEOF
-} derive(Show, ToJson)
+} derive(Show, ToJson(style="legacy"))
 
 ///|
 pub fn parse_sexp(input : String) -> Sexp raise ParseError {
@@ -23,7 +23,7 @@ pub fn parse_sexp(input : String) -> Sexp raise ParseError {
 
 ///|
 fn parse_tokens(
-  tokens : @array.View[@string.View]
+  tokens : @array.View[@string.View],
 ) -> (Sexp, @array.View[@string.View]) raise ParseError {
   match tokens {
     [] => raise UnexpectedEOF
