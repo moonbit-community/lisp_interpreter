@@ -2,8 +2,6 @@
 package "bobzhang/lisp_interpreter"
 
 // Values
-fn create_standard_env() -> Environment
-
 fn evaluate(Sexp) -> Sexp raise
 
 fn parse_sexp(String) -> Sexp raise
@@ -18,10 +16,10 @@ impl Show for ParseError
 impl ToJson for ParseError
 
 // Types and methods
-pub struct Environment {
-  bindings : Map[String, Value]
-}
-impl Show for Environment
+pub struct Env(Map[String, Value])
+fn Env::builtin() -> Self
+fn Env::inner(Self) -> Map[String, Value]
+impl Show for Env
 
 pub(all) enum Sexp {
   Atom(String)
@@ -35,7 +33,7 @@ pub(all) enum Value {
   Number(Int)
   Boolean(Bool)
   Symbol(String)
-  Function(Array[String], Sexp, Environment)
+  Function(Array[String], Sexp, Env)
   BuiltinFunction(String)
 }
 impl Show for Value

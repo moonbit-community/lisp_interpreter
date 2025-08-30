@@ -54,13 +54,13 @@ pub fn Env::builtin() -> Self {
 ///|
 pub fn evaluate(expr : Sexp) -> Sexp raise Error {
   let env = Env::builtin()
-  let result = eval(expr, env)
+  let result = expr.eval(env)
   sexp_from_value(result)
 }
 
 ///|
-fn eval(expr : Sexp, env : Env) -> Value raise EvalError {
-  match expr {
+fn Sexp::eval(self : Sexp, env : Env) -> Value raise EvalError {
+  match self {
     // Atoms: handle literals and variables
     Atom("true") => Value::Boolean(true)
     Atom("false") => Value::Boolean(false)
@@ -90,14 +90,15 @@ fn eval(expr : Sexp, env : Env) -> Value raise EvalError {
     // Lists: procedure calls, special forms, etc.
     List([Atom("if"), condition, then_, else_, .. rest]) => {
       guard rest is [] else {
-        raise WrongArgumentCount("'if' requires exactly 3 arguments")
+        raise WrongArgumentCount(
+          "if: expected exactly 3 arguments, got \{rest.length() + 3}",
+        )
       }
-      let condition = eval(condition, env)
-      let is_true = is_truthy(condition)
-      if is_true {
-        return eval(then_, env)
+      let condition_value = condition.eval(env)
+      if is_truthy(condition_value) {
+        then_.eval(env)
       } else {
-        return eval(else_, env)
+        else_.eval(env)
       }
     }
     // List([Atom("define"), Atom(name), value, ..rest]) => {
@@ -110,13 +111,16 @@ fn eval(expr : Sexp, env : Env) -> Value raise EvalError {
     // }
     List([Atom("lambda"), List(params_sexp), body, .. rest]) => {
       guard rest is [] else {
-        raise WrongArgumentCount("'lambda' requires exactly 2 arguments")
+        raise WrongArgumentCount(
+          "lambda: expected exactly 2 arguments, got \{rest.length() + 2}",
+        )
       }
       let params = []
       for param in params_sexp {
         match param {
           Atom(name) => params.push(name)
-          _ => raise TypeError("Lambda parameter must be a symbol")
+          _ =>
+            raise TypeError("lambda: parameter must be a symbol, got: \{param}")
         }
       }
       return Value::Function(params, body, env)
@@ -124,13 +128,13 @@ fn eval(expr : Sexp, env : Env) -> Value raise EvalError {
     List([Atom("begin"), .. expressions]) => {
       let mut result = Value::Symbol("nil")
       for expression in expressions {
-        result = eval(expression, env)
+        result = expression.eval(env)
       }
-      return result
+      result
     }
     List(elements) => {
       guard elements.length() > 0 else {
-        return Value::Symbol("nil") // Empty list evaluates to nil
+        Value::Symbol("nil") // Empty list evaluates to nil
       }
 
       // Get the first element (operator or special form)
@@ -140,18 +144,20 @@ fn eval(expr : Sexp, env : Env) -> Value raise EvalError {
       match first {
         Atom("define") => {
           guard elements.length() == 3 else {
-            raise WrongArgumentCount("'define' requires exactly 2 arguments")
+            raise WrongArgumentCount(
+              "define: expected exactly 2 arguments, got \{elements.length() - 1}",
+            )
           }
           match elements[1] {
             Atom(name) => {
-              let value = eval(elements[2], env)
+              let value = elements[2].eval(env)
               env.set(name, value)
-              return Value::Symbol("ok")
+              Value::Symbol("ok")
             }
             List(func_parts) => {
               // Function definition shorthand: (define (name arg1 arg2) body)
               guard func_parts.length() > 0 else {
-                raise TypeError("Invalid function definition")
+                raise TypeError("define: invalid function definition syntax")
               }
               match func_parts[0] {
                 Atom(name) => {
@@ -161,16 +167,21 @@ fn eval(expr : Sexp, env : Env) -> Value raise EvalError {
                     match func_parts[i] {
                       Atom(param) => params.push(param)
                       _ =>
-                        raise TypeError("Function parameter must be a symbol")
+                        raise TypeError(
+                          "define: function parameter must be a symbol, got: \{func_parts[i]}",
+                        )
                     }
                   }
 
                   // Create a lambda function and bind it to the name
                   let lambda_value = Value::Function(params, elements[2], env)
                   env.set(name, lambda_value)
-                  return Value::Symbol("ok")
+                  Value::Symbol("ok")
                 }
-                _ => raise TypeError("Function name must be a symbol")
+                _ =>
+                  raise TypeError(
+                    "define: function name must be a symbol, got: \{func_parts[0]}",
+                  )
               }
             }
             // _ => raise TypeError("First argument to 'define' must be a symbol")
@@ -179,12 +190,12 @@ fn eval(expr : Sexp, env : Env) -> Value raise EvalError {
         // Evaluate a function call
         _ => {
           // Evaluate the operator
-          let operator = eval(elements[0], env)
+          let operator = elements[0].eval(env)
 
           // Evaluate the arguments
           let args = []
           for i = 1; i < elements.length(); i = i + 1 {
-            let arg = eval(elements[i], env)
+            let arg = elements[i].eval(env)
             args.push(arg)
           }
           apply(operator, args)
@@ -250,7 +261,7 @@ fn apply(operator : Value, args : Array[Value]) -> Value raise EvalError {
       }
 
       // Evaluate the body in the new environment
-      eval(body, call_env)
+      body.eval(call_env)
     }
     BuiltinFunction(name) =>
       match name {
@@ -259,14 +270,14 @@ fn apply(operator : Value, args : Array[Value]) -> Value raise EvalError {
           for arg in args {
             match arg {
               Value::Number(n) => result = result + n
-              _ => raise TypeError("'+' expects numeric arguments")
+              _ => raise TypeError("+: expected number, got: \{arg}")
             }
           }
           Value::Number(result)
         }
         "-" => {
           guard args.length() > 0 else {
-            raise WrongArgumentCount("'-' requires at least one argument")
+            raise WrongArgumentCount("-: expected at least 1 argument, got 0")
           }
           match args[0] {
             Value::Number(first) => {
@@ -277,7 +288,7 @@ fn apply(operator : Value, args : Array[Value]) -> Value raise EvalError {
               for i = 1; i < args.length(); i = i + 1 {
                 match args[i] {
                   Value::Number(n) => result = result - n
-                  _ => raise TypeError("'-' expects numeric arguments")
+                  _ => raise TypeError("-: expected number, got: \{args[0]}")
                 }
               }
               Value::Number(result)
@@ -290,14 +301,14 @@ fn apply(operator : Value, args : Array[Value]) -> Value raise EvalError {
           for arg in args {
             match arg {
               Value::Number(n) => result = result * n
-              _ => raise TypeError("'*' expects numeric arguments")
+              _ => raise TypeError("*: expected number, got: \{arg}")
             }
           }
           Value::Number(result)
         }
         "/" => {
           guard args.length() > 0 else {
-            raise WrongArgumentCount("'/' requires at least one argument")
+            raise WrongArgumentCount("/: expected at least 1 argument, got 0")
           }
           match args[0] {
             Value::Number(first) => {
@@ -308,49 +319,64 @@ fn apply(operator : Value, args : Array[Value]) -> Value raise EvalError {
               for i = 1; i < args.length(); i = i + 1 {
                 match args[i] {
                   Value::Number(n) => {
-                    guard n != 0 else { raise TypeError("Division by zero") }
+                    guard n != 0 else { raise TypeError("/: division by zero") }
                     result = result / n
                   }
-                  _ => raise TypeError("'/' expects numeric arguments")
+                  _ => raise TypeError("/: expected number, got: \{args[i]}")
                 }
               }
               Value::Number(result)
             }
-            _ => raise TypeError("'/' expects numeric arguments")
+            _ => raise TypeError("/: expected number, got: \{args[0]}")
           }
         }
 
         // Comparison operators
         "=" => {
           guard args.length() == 2 else {
-            raise WrongArgumentCount("'=' requires exactly 2 arguments")
+            raise WrongArgumentCount(
+              "=: expected exactly 2 arguments, got \{args.length()}",
+            )
           }
           match (args[0], args[1]) {
             (Value::Number(a), Value::Number(b)) => Value::Boolean(a == b)
-            _ => raise TypeError("'=' expects numeric arguments")
+            _ =>
+              raise TypeError(
+                "=: expected numbers, got: \{args[0]} and \{args[1]}",
+              )
           }
         }
         "<" => {
           guard args.length() == 2 else {
-            raise WrongArgumentCount("'<' requires exactly 2 arguments")
+            raise WrongArgumentCount(
+              "<: expected exactly 2 arguments, got \{args.length()}",
+            )
           }
           match (args[0], args[1]) {
             (Value::Number(a), Value::Number(b)) => Value::Boolean(a < b)
-            _ => raise TypeError("'<' expects numeric arguments")
+            _ =>
+              raise TypeError(
+                "<: expected numbers, got: \{args[0]} and \{args[1]}",
+              )
           }
         }
         ">" => {
           guard args.length() == 2 else {
-            raise WrongArgumentCount("'>' requires exactly 2 arguments")
+            raise WrongArgumentCount(
+              ">: expected exactly 2 arguments, got \{args.length()}",
+            )
           }
           match (args[0], args[1]) {
             (Value::Number(a), Value::Number(b)) => Value::Boolean(a > b)
-            _ => raise TypeError("'>' expects numeric arguments")
+            _ =>
+              raise TypeError(
+                ">: expected numbers, got: \{args[0]} and \{args[1]}",
+              )
           }
         }
-        _ => raise NotAFunction("Unknown builtin function: " + name)
+        _ => raise NotAFunction("unknown builtin function: \{name}")
       }
-    _ => raise NotAFunction("Not a function")
+    _ => raise NotAFunction("not a function: \{operator}")
   }
 }
 
