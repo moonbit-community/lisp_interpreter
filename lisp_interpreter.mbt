@@ -62,6 +62,8 @@ pub fn evaluate(expr : Sexp) -> Sexp raise Error {
 fn eval(expr : Sexp, env : Env) -> Value raise EvalError {
   match expr {
     // Atoms: handle literals and variables
+    Atom("true") => Value::Boolean(true)
+    Atom("false") => Value::Boolean(false)
     Atom(token) => {
       // Try parsing as an integer
       if token is ['0'..='9', ..] || token is ['-', '0'..='9', ..] {
@@ -75,12 +77,10 @@ fn eval(expr : Sexp, env : Env) -> Value raise EvalError {
 
       // Try parsing as a boolean
       match token {
-        "true" => return Value::Boolean(true)
-        "false" => return Value::Boolean(false)
         // Look up variables in the environment
         _ => {
           guard env.get(token) is Some(value) else {
-            raise UnboundSymbol("Unbound variable: " + token)
+            raise UnboundSymbol("Unbound variable: \{token}")
           }
           return value
         }
@@ -88,6 +88,46 @@ fn eval(expr : Sexp, env : Env) -> Value raise EvalError {
     }
 
     // Lists: procedure calls, special forms, etc.
+    List([Atom("if"), condition, then_, else_, .. rest]) => {
+      guard rest is [] else {
+        raise WrongArgumentCount("'if' requires exactly 3 arguments")
+      }
+      let condition = eval(condition, env)
+      let is_true = is_truthy(condition)
+      if is_true {
+        return eval(then_, env)
+      } else {
+        return eval(else_, env)
+      }
+    }
+    // List([Atom("define"), Atom(name), value, ..rest]) => {
+    //   guard rest is [] else {
+    //     raise WrongArgumentCount("'define' requires exactly 2 arguments")
+    //   }
+    //   let value = eval(value, env)
+    //   env[name] =value
+    //   return Value::Symbol("ok")
+    // }
+    List([Atom("lambda"), List(params_sexp), body, .. rest]) => {
+      guard rest is [] else {
+        raise WrongArgumentCount("'lambda' requires exactly 2 arguments")
+      }
+      let params = []
+      for param in params_sexp {
+        match param {
+          Atom(name) => params.push(name)
+          _ => raise TypeError("Lambda parameter must be a symbol")
+        }
+      }
+      return Value::Function(params, body, env)
+    }
+    List([Atom("begin"), .. expressions]) => {
+      let mut result = Value::Symbol("nil")
+      for expression in expressions {
+        result = eval(expression, env)
+      }
+      return result
+    }
     List(elements) => {
       guard elements.length() > 0 else {
         return Value::Symbol("nil") // Empty list evaluates to nil
@@ -98,40 +138,28 @@ fn eval(expr : Sexp, env : Env) -> Value raise EvalError {
 
       // Special forms
       match first {
-        Sexp::Atom("if") => {
-          guard elements.length() == 4 else {
-            raise WrongArgumentCount("'if' requires exactly 3 arguments")
-          }
-          let condition = eval(elements[1], env)
-          let is_true = is_truthy(condition)
-          if is_true {
-            return eval(elements[2], env)
-          } else {
-            return eval(elements[3], env)
-          }
-        }
-        Sexp::Atom("define") => {
+        Atom("define") => {
           guard elements.length() == 3 else {
             raise WrongArgumentCount("'define' requires exactly 2 arguments")
           }
           match elements[1] {
-            Sexp::Atom(name) => {
+            Atom(name) => {
               let value = eval(elements[2], env)
               env.set(name, value)
               return Value::Symbol("ok")
             }
-            Sexp::List(func_parts) => {
+            List(func_parts) => {
               // Function definition shorthand: (define (name arg1 arg2) body)
               guard func_parts.length() > 0 else {
                 raise TypeError("Invalid function definition")
               }
               match func_parts[0] {
-                Sexp::Atom(name) => {
+                Atom(name) => {
                   // Extract parameters
                   let params = []
                   for i = 1; i < func_parts.length(); i = i + 1 {
                     match func_parts[i] {
-                      Sexp::Atom(param) => params.push(param)
+                      Atom(param) => params.push(param)
                       _ =>
                         raise TypeError("Function parameter must be a symbol")
                     }
@@ -148,36 +176,6 @@ fn eval(expr : Sexp, env : Env) -> Value raise EvalError {
             // _ => raise TypeError("First argument to 'define' must be a symbol")
           }
         }
-        Sexp::Atom("lambda") => {
-          guard elements.length() == 3 else {
-            raise WrongArgumentCount("'lambda' requires exactly 2 arguments")
-          }
-
-          // Extract parameters
-          match elements[1] {
-            Sexp::List(params_sexp) => {
-              let params = []
-              for param in params_sexp {
-                match param {
-                  Sexp::Atom(name) => params.push(name)
-                  _ => raise TypeError("Lambda parameter must be a symbol")
-                }
-              }
-              return Value::Function(params, elements[2], env)
-            }
-            _ => raise TypeError("Lambda parameters must be a list")
-          }
-        }
-        Sexp::Atom("begin") => {
-          let mut result = Value::Symbol("nil")
-
-          // Evaluate each expression in sequence, return the last result
-          for i = 1; i < elements.length(); i = i + 1 {
-            result = eval(elements[i], env)
-          }
-          return result
-        }
-
         // Evaluate a function call
         _ => {
           // Evaluate the operator
@@ -210,7 +208,7 @@ fn string_to_int(s : String) -> Int raise Failure {
         let digit = char - '0'
         result = result * 10 + digit
       } else {
-        fail("Invalid integer: " + s)
+        fail("Invalid integer: \{s}")
       }
       i = i + 1
     }
@@ -223,7 +221,7 @@ fn string_to_int(s : String) -> Int raise Failure {
         let digit = char - '0'
         result = result * 10 + digit
       } else {
-        fail("Invalid integer: " + s)
+        fail("Invalid integer: \{s}")
       }
       i = i + 1
     }
@@ -244,10 +242,7 @@ fn apply(operator : Value, args : Array[Value]) -> Value raise EvalError {
       // Bind arguments to parameters
       guard params.length() == args.length() else {
         raise WrongArgumentCount(
-          "Expected " +
-          params.length().to_string() +
-          " arguments, got " +
-          args.length().to_string(),
+          "Expected \{params.length()} arguments, got \{args.length()}",
         )
       }
       for i = 0; i < params.length(); i = i + 1 {
@@ -257,7 +252,7 @@ fn apply(operator : Value, args : Array[Value]) -> Value raise EvalError {
       // Evaluate the body in the new environment
       eval(body, call_env)
     }
-    Value::BuiltinFunction(name) =>
+    BuiltinFunction(name) =>
       match name {
         "+" => {
           let mut result = 0
