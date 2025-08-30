@@ -40,7 +40,7 @@ test {
 ### Conditional Expressions
 
 ```moonbit
-test {
+test "if conditions" {
   let condition = evaluate(parse_sexp("(if (> 5 2) 42 0)"))
   assert_eq(condition, Sexp::Atom("42"))
   

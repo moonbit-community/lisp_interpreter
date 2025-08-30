@@ -10,14 +10,7 @@ pub(all) enum Value {
 ///|
 pub struct Environment {
   bindings : Map[String, Value]
-}
-
-///|
-/// Implement Show for Environment to satisfy Value's Show derivation
-///
-pub impl Show for Environment with output(_, logger) {
-  logger.write_string("{...}")
-}
+} derive(Show)
 
 ///|
 fn Environment::new() -> Environment {
@@ -25,6 +18,7 @@ fn Environment::new() -> Environment {
 }
 
 ///|
+#alias(op_set)
 fn Environment::set(self : Environment, key : String, value : Value) -> Unit {
   self.bindings[key] = value
 }
