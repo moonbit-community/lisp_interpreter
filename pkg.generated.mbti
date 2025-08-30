@@ -12,7 +12,7 @@ fn evaluate(Sexp) -> Sexp raise
 
 fn parse_sexp(String) -> Sexp raise ParseError
 
-fn tokenize(@string.StringView) -> Array[@string.StringView]
+fn tokenize(@string.View) -> Array[@string.View]
 
 // Errors
 type ParseError

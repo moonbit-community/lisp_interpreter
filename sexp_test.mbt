@@ -4,7 +4,7 @@
 test "parse extra tokens" {
   let input = "(hello) world"
   @json.inspect(try? parse_sexp(input), content={
-    "Err": { "$tag": "UnmatchedParens", "0": "unexpected tokens at the end" },
+    "Err": ["UnmatchedParens", "unexpected tokens at the end"],
   })
 }
 
@@ -12,7 +12,7 @@ test "parse extra tokens" {
 test "parse unexpected closing paren" {
   let input = ")hello"
   @json.inspect(try? parse_sexp(input), content={
-    "Err": { "$tag": "UnexpectedParens", "0": "unexpected closing parenthesis" },
+    "Err": ["UnexpectedParens", "unexpected closing parenthesis"],
   })
 }
 
@@ -41,34 +41,21 @@ test "tokenize unicode emoji" {
 test "parse simple" {
   let input = "(hello world)"
   let result = parse_sexp(input)
-  @json.inspect(result, content={
-    "$tag": "List",
-    "0": [{ "$tag": "Atom", "0": "hello" }, { "$tag": "Atom", "0": "world" }],
-  })
+  @json.inspect(result, content=["List", [["Atom", "hello"], ["Atom", "world"]]])
 }
 
 ///|
 test "parse nested" {
   let input = "(define (square x) (* x x))"
   let result = parse_sexp(input)
-  @json.inspect(result, content={
-    "$tag": "List",
-    "0": [
-      { "$tag": "Atom", "0": "define" },
-      {
-        "$tag": "List",
-        "0": [{ "$tag": "Atom", "0": "square" }, { "$tag": "Atom", "0": "x" }],
-      },
-      {
-        "$tag": "List",
-        "0": [
-          { "$tag": "Atom", "0": "*" },
-          { "$tag": "Atom", "0": "x" },
-          { "$tag": "Atom", "0": "x" },
-        ],
-      },
+  @json.inspect(result, content=[
+    "List",
+    [
+      ["Atom", "define"],
+      ["List", [["Atom", "square"], ["Atom", "x"]]],
+      ["List", [["Atom", "*"], ["Atom", "x"], ["Atom", "x"]]],
     ],
-  })
+  ])
 }
 
 ///|
@@ -85,20 +72,15 @@ test "parse error" {
 ///|
 test "parse empty" {
   let input = ""
-  @json.inspect(try? parse_sexp(input), content={
-    "Err": { "$tag": "UnexpectedEOF" },
-  })
+  @json.inspect(try? parse_sexp(input), content={ "Err": "UnexpectedEOF" })
 }
 
 ///|
 test "parse parens" {
   let input = "(hello (world))"
   let result = parse_sexp(input)
-  @json.inspect(result, content={
-    "$tag": "List",
-    "0": [
-      { "$tag": "Atom", "0": "hello" },
-      { "$tag": "List", "0": [{ "$tag": "Atom", "0": "world" }] },
-    ],
-  })
+  @json.inspect(result, content=[
+    "List",
+    [["Atom", "hello"], ["List", [["Atom", "world"]]]],
+  ])
 }

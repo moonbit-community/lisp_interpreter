@@ -12,7 +12,8 @@ pub struct Environment {
   bindings : Map[String, Value]
 }
 
-///| Implement Show for Environment to satisfy Value's Show derivation
+///|
+/// Implement Show for Environment to satisfy Value's Show derivation
 ///
 pub impl Show for Environment with output(_, logger) {
   logger.write_string("{...}")
@@ -42,7 +43,8 @@ priv suberror EvalError {
   TypeError(String)
 } derive(Show)
 
-///| Implement Show for Value
+///|
+/// Implement Show for Value
 ///
 pub impl Show for Value with output(self, logger) {
   match self {
