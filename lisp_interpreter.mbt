@@ -68,7 +68,7 @@ fn Sexp::eval(self : Sexp, env : Env) -> Value raise EvalError {
       // Try parsing as an integer
       if token is ['0'..='9', ..] || token is ['-', '0'..='9', ..] {
         try {
-          let num = string_to_int(token)
+          let num = @strconv.parse_int(token)
           return Value::Number(num)
         } catch {
           _ => () // Not a number, continue
@@ -125,6 +125,7 @@ fn Sexp::eval(self : Sexp, env : Env) -> Value raise EvalError {
       }
       return Value::Function(params, body, env)
     }
+    List([]) => Symbol("nil")
     List([Atom("begin"), .. expressions]) => {
       let mut result = Value::Symbol("nil")
       for expression in expressions {
@@ -133,9 +134,6 @@ fn Sexp::eval(self : Sexp, env : Env) -> Value raise EvalError {
       result
     }
     List(elements) => {
-      guard elements.length() > 0 else {
-        Value::Symbol("nil") // Empty list evaluates to nil
-      }
 
       // Get the first element (operator or special form)
       let first = elements[0]
@@ -203,44 +201,6 @@ fn Sexp::eval(self : Sexp, env : Env) -> Value raise EvalError {
       }
     }
   }
-}
-
-///|
-fn string_to_int(s : String) -> Int raise Failure {
-  let mut result = 0
-  let mut is_negative = false
-  if s is ['-', ..] {
-    is_negative = true
-    // Continue processing from index 1, skipping the '-' sign
-    let mut i = 1
-    while i < s.length() {
-      let char = s[i]
-      if char is ('0'..='9') {
-        let digit = char - '0'
-        result = result * 10 + digit
-      } else {
-        fail("Invalid integer: \{s}")
-      }
-      i = i + 1
-    }
-  } else {
-    // Process a positive number
-    let mut i = 0
-    while i < s.length() {
-      let char = s[i]
-      if char is ('0'..='9') {
-        let digit = char - '0'
-        result = result * 10 + digit
-      } else {
-        fail("Invalid integer: \{s}")
-      }
-      i = i + 1
-    }
-  }
-  if is_negative {
-    result = -result
-  }
-  result
 }
 
 ///|
