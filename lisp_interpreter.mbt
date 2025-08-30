@@ -35,22 +35,20 @@ priv suberror EvalError {
   TypeError(String)
 } derive(Show)
 
-
-
 ///|
 pub fn Env::builtin() -> Self {
   {
-    "." : BuiltinFunction("dummy"),
-    "+" : BuiltinFunction("+"),
-    "-" : BuiltinFunction("-"),
-    "*" : BuiltinFunction("*"),
-    "/" : BuiltinFunction("/"),
-    "=" : BuiltinFunction("="),
-    "<" : BuiltinFunction("<"),
-    ">" : BuiltinFunction(">"),
-    "<=" : BuiltinFunction("<="),
-    ">=" : BuiltinFunction(">="),
-  }  
+    ".": BuiltinFunction("dummy"),
+    "+": BuiltinFunction("+"),
+    "-": BuiltinFunction("-"),
+    "*": BuiltinFunction("*"),
+    "/": BuiltinFunction("/"),
+    "=": BuiltinFunction("="),
+    "<": BuiltinFunction("<"),
+    ">": BuiltinFunction(">"),
+    "<=": BuiltinFunction("<="),
+    ">=": BuiltinFunction(">="),
+  }
 }
 
 ///|

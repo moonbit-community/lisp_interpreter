@@ -3,10 +3,10 @@
 ///|
 test "evaluate simple list operations" {
   fn evaluate_string(input : String) -> Int raise Error {
-    let sexp = parse_sexp(input)
-    let result = evaluate(sexp)
+    let sexp = @lisp_interpreter.parse_sexp(input)
+    let result = @lisp_interpreter.evaluate(sexp)
     match result {
-      Sexp::Atom(value) =>
+      @lisp_interpreter.Sexp::Atom(value) =>
         @strconv.parse(value) catch {
           _ => raise Failure("Expected integer result, got: " + value)
         }
@@ -30,19 +30,19 @@ test "evaluate simple list operations" {
 ///|
 test "evaluate variables and definitions" {
   let input = "(begin (define x 10) (+ x 5))"
-  let sexp = parse_sexp(input)
-  let result = evaluate(sexp)
+  let sexp = @lisp_interpreter.parse_sexp(input)
+  let result = @lisp_interpreter.evaluate(sexp)
   match result {
-    Sexp::Atom(value) => assert_eq(value, "15")
+    @lisp_interpreter.Sexp::Atom(value) => assert_eq(value, "15")
     _ => fail("Expected atom result, got: " + Show::to_string(result))
   }
 }
 
 ///|
 test "evaluate conditions" {
-  fn evaluate_string(input : String) -> Sexp raise Error {
-    let sexp = parse_sexp(input)
-    let result = evaluate(sexp)
+  fn evaluate_string(input : String) -> @lisp_interpreter.Sexp raise Error {
+    let sexp = @lisp_interpreter.parse_sexp(input)
+    let result = @lisp_interpreter.evaluate(sexp)
     result
   }
 
@@ -98,10 +98,10 @@ test "evaluate conditions" {
 ///|
 test "evaluate lambdas and function calls" {
   fn evaluate_string(input : String) -> Int raise Error {
-    let sexp = parse_sexp(input)
-    let result = evaluate(sexp)
+    let sexp = @lisp_interpreter.parse_sexp(input)
+    let result = @lisp_interpreter.evaluate(sexp)
     match result {
-      Sexp::Atom(value) =>
+      @lisp_interpreter.Sexp::Atom(value) =>
         @strconv.parse(value) catch {
           _ => raise Failure("Expected integer result, got: " + value)
         }
