@@ -69,7 +69,13 @@ test {
 ```moonbit
 test {
   // Alternative function definition syntax
-  let factorial = "(begin (define (fact n) (if (= n 0) 1 (* n (fact (- n 1))))) (fact 5))"
+  // let factorial = "(begin (define (fact n) (if (= n 0) 1 (* n (fact (- n 1))))) (fact 5))"
+  let factorial = 
+    #| (begin 
+    #|   (define (fact n) 
+    #|      (if (= n 0) 1 
+    #|        (* n (fact (- n 1))))) 
+    #| (fact 5)) 
   let result = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp(factorial))
   assert_eq(result, @lisp_interpreter.Sexp::Atom("120"))
 }
