@@ -3,29 +3,27 @@ pub(all) enum Value {
   Number(Int)
   Boolean(Bool)
   Symbol(String)
-  Function(Array[String], Sexp, Environment)
+  Function(Array[String], Sexp, Env)
   BuiltinFunction(String)
-}
-
-///|
-pub struct Environment {
-  bindings : Map[String, Value]
 } derive(Show)
 
 ///|
-fn Environment::new() -> Environment {
-  { bindings: {} }
-}
+pub struct Env(Map[String, Value]) derive(Show)
+
+// ///|
+// fn Environment::new() -> Environment {
+//   {}
+// }
 
 ///|
 #alias(op_set)
-fn Environment::set(self : Environment, key : String, value : Value) -> Unit {
-  self.bindings[key] = value
+fn Env::set(self : Env, key : String, value : Value) -> Unit {
+  self.0[key] = value
 }
 
 ///|
-fn Environment::get(self : Environment, key : String) -> Value? {
-  self.bindings.get(key)
+fn Env::get(self : Env, key : String) -> Value? {
+  self.0.get(key)
 }
 
 ///|
@@ -37,52 +35,36 @@ priv suberror EvalError {
   TypeError(String)
 } derive(Show)
 
-///|
-/// Implement Show for Value
-///
-pub impl Show for Value with output(self, logger) {
-  match self {
-    Value::Number(n) => logger.write_string(n.to_string())
-    Value::Boolean(b) => logger.write_string(b.to_string())
-    Value::Symbol(s) => logger.write_string(s)
-    Value::Function(_, _, _) => logger.write_string("<function>")
-    Value::BuiltinFunction(name) =>
-      logger.write_string("<builtin:" + name + ">")
-  }
-}
+
 
 ///|
-pub fn create_standard_env() -> Environment {
-  let env = Environment::new()
-
-  // Arithmetic operations
-  env.set(".", Value::BuiltinFunction("dummy"))
-  env.set("+", Value::BuiltinFunction("+"))
-  env.set("-", Value::BuiltinFunction("-"))
-  env.set("*", Value::BuiltinFunction("*"))
-  env.set("/", Value::BuiltinFunction("/"))
-
-  // Comparison operations
-  env.set("=", Value::BuiltinFunction("="))
-  env.set("<", Value::BuiltinFunction("<"))
-  env.set(">", Value::BuiltinFunction(">"))
-  env.set("<=", Value::BuiltinFunction("<="))
-  env.set(">=", Value::BuiltinFunction(">="))
-  env
+pub fn Env::builtin() -> Self {
+  {
+    "." : BuiltinFunction("dummy"),
+    "+" : BuiltinFunction("+"),
+    "-" : BuiltinFunction("-"),
+    "*" : BuiltinFunction("*"),
+    "/" : BuiltinFunction("/"),
+    "=" : BuiltinFunction("="),
+    "<" : BuiltinFunction("<"),
+    ">" : BuiltinFunction(">"),
+    "<=" : BuiltinFunction("<="),
+    ">=" : BuiltinFunction(">="),
+  }  
 }
 
 ///|
 pub fn evaluate(expr : Sexp) -> Sexp raise Error {
-  let env = create_standard_env()
+  let env = Env::builtin()
   let result = eval(expr, env)
   sexp_from_value(result)
 }
 
 ///|
-fn eval(expr : Sexp, env : Environment) -> Value raise EvalError {
+fn eval(expr : Sexp, env : Env) -> Value raise EvalError {
   match expr {
     // Atoms: handle literals and variables
-    Sexp::Atom(token) => {
+    Atom(token) => {
       // Try parsing as an integer
       if token is ['0'..='9', ..] || token is ['-', '0'..='9', ..] {
         try {
@@ -108,7 +90,7 @@ fn eval(expr : Sexp, env : Environment) -> Value raise EvalError {
     }
 
     // Lists: procedure calls, special forms, etc.
-    Sexp::List(elements) => {
+    List(elements) => {
       guard elements.length() > 0 else {
         return Value::Symbol("nil") // Empty list evaluates to nil
       }

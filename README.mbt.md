@@ -160,7 +160,7 @@ test {
   let _boolean = Value::Boolean(true)
   let _symbol = Value::Symbol("nil")
   // Functions store parameters, body, and closure environment
-  let env = create_standard_env()
+  let env = Env::builtin()
   let _func = Value::Function(["x"], parse_sexp("(* x x)"), env)
 }
 ```
