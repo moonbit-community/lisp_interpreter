@@ -1,3 +1,1 @@
-# bobzhang/sexp
-
-## experimental sexp parser made by MoonAgent
+README.mbt.md
