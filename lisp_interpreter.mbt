@@ -133,72 +133,51 @@ fn Sexp::eval(self : Sexp, env : Env) -> Value raise EvalError {
       }
       result
     }
-    List(elements) => {
-
-      // Get the first element (operator or special form)
-      let first = elements[0]
-
-      // Special forms
-      match first {
-        Atom("define") => {
-          guard elements.length() == 3 else {
-            raise WrongArgumentCount(
-              "define: expected exactly 2 arguments, got \{elements.length() - 1}",
-            )
-          }
-          match elements[1] {
-            Atom(name) => {
-              let value = elements[2].eval(env)
-              env.set(name, value)
-              Value::Symbol("ok")
-            }
-            List(func_parts) => {
-              // Function definition shorthand: (define (name arg1 arg2) body)
-              guard func_parts.length() > 0 else {
-                raise TypeError("define: invalid function definition syntax")
-              }
-              match func_parts[0] {
-                Atom(name) => {
-                  // Extract parameters
-                  let params = []
-                  for i = 1; i < func_parts.length(); i = i + 1 {
-                    match func_parts[i] {
-                      Atom(param) => params.push(param)
-                      _ =>
-                        raise TypeError(
-                          "define: function parameter must be a symbol, got: \{func_parts[i]}",
-                        )
-                    }
-                  }
-
-                  // Create a lambda function and bind it to the name
-                  let lambda_value = Value::Function(params, elements[2], env)
-                  env.set(name, lambda_value)
-                  Value::Symbol("ok")
-                }
-                _ =>
-                  raise TypeError(
-                    "define: function name must be a symbol, got: \{func_parts[0]}",
-                  )
-              }
-            }
-            // _ => raise TypeError("First argument to 'define' must be a symbol")
-          }
-        }
-        // Evaluate a function call
-        _ => {
-          // Evaluate the operator
-          let operator = elements[0].eval(env)
-
-          // Evaluate the arguments
-          let args = []
-          for i = 1; i < elements.length(); i = i + 1 {
-            let arg = elements[i].eval(env)
-            args.push(arg)
-          }
-          apply(operator, args)
-        }
+    List([Atom("define"), Atom(name), value]) => {
+      let evaluated_value = value.eval(env)
+      env.set(name, evaluated_value)
+      Value::Symbol("ok")
+    }
+    List([Atom("define"), List(func_parts), body]) => {
+      guard func_parts.length() > 0 else {
+        raise TypeError("define: invalid function definition syntax")
       }
+      match func_parts[0] {
+        Atom(name) => {
+          let params = []
+          for i = 1; i < func_parts.length(); i = i + 1 {
+            match func_parts[i] {
+              Atom(param) => params.push(param)
+              _ =>
+                raise TypeError(
+                  "define: function parameter must be a symbol, got: \{func_parts[i]}",
+                )
+            }
+          }
+          let lambda_value = Value::Function(params, body, env)
+          env.set(name, lambda_value)
+          Value::Symbol("ok")
+        }
+        _ =>
+          raise TypeError(
+            "define: function name must be a symbol, got: \{func_parts[0]}",
+          )
+      }
+    }
+    List([Atom("define"), .. rest]) => {
+      raise WrongArgumentCount(
+        "define: expected exactly 2 arguments, got \{rest.length()}",
+      )
+    }
+    List(elements) => {
+      // Evaluate a function call
+      let operator = elements[0].eval(env)
+      let args = []
+      for i = 1; i < elements.length(); i = i + 1 {
+        let arg = elements[i].eval(env)
+        args.push(arg)
+      }
+      apply(operator, args)
     }
   }
 }
