@@ -19,11 +19,8 @@ A Lisp interpreter implementation in MoonBit, featuring S-expression parsing and
 
 ```moonbit
 test {
-  let result = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp("(+ 1 2 3)"))
-  @json.inspect(result, content=6)
-  
-  let nested = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp("(* (+ 2 3) (- 8 2))"))
-  @json.inspect(nested, content=30)
+  eval_string("(+ 1 2 3)", content=6)
+  eval_string("(* (+ 2 3) (- 8 2))", content=30)
 }
 ```
 
@@ -31,9 +28,7 @@ test {
 
 ```moonbit
 test {
-  let program = "(begin (define x 10) (define y 5) (+ x y))"
-  let result = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp(program))
-  @json.inspect(result, content=15)
+  eval_string("(begin (define x 10) (define y 5) (+ x y))", content=15)
 }
 ```
 
@@ -53,14 +48,14 @@ test "if conditions" {
 
 ```moonbit
 test {
-  let square_func = "(begin (define square (lambda (x) (* x x))) (square 4))"
-  let result = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp(square_func))
-  @json.inspect(result, content=16)
+  // Basic lambda
+  eval_string("(begin (define square (lambda (x) (* x x))) (square 4))", content=16)
   
   // Higher-order functions
-  let higher_order = "(begin (define apply-twice (lambda (f x) (f (f x)))) (define add1 (lambda (x) (+ x 1))) (apply-twice add1 5))"
-  let result2 = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp(higher_order))
-  @json.inspect(result2, content=7)
+  eval_string("(begin (define apply-twice (lambda (f x) (f (f x)))) (define add1 (lambda (x) (+ x 1))) (apply-twice add1 5))", content=7)
+  
+  // Closures
+  eval_string("(begin (define make-adder (lambda (n) (lambda (x) (+ x n)))) (define add5 (make-adder 5)) (add5 10))", content=15)
 }
 ```
 
@@ -69,14 +64,13 @@ test {
 ```moonbit
 test {
   // Alternative function definition syntax  
-  let factorial = 
+  let factorial =
     #| (begin 
     #|   (define (fact n) 
     #|      (if (= n 0) 1 
     #|        (* n (fact (- n 1))))) 
     #| (fact 5)) 
-  let result = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp(factorial))
-  @json.inspect(result, content=120)
+  eval_string(factorial, content=120)  
 }
 ```
 

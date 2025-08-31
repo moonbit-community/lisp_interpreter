@@ -2,7 +2,9 @@
 package "bobzhang/lisp_interpreter"
 
 // Values
-fn evaluate(Sexp) -> Sexp raise
+fn eval(String) -> Value raise
+
+fn evaluate(Sexp) -> Value raise
 
 fn parse_sexp(String) -> Sexp raise
 
@@ -37,6 +39,7 @@ pub(all) enum Value {
   BuiltinFunction(String)
 }
 impl Show for Value
+impl ToJson for Value
 
 // Type aliases
 
