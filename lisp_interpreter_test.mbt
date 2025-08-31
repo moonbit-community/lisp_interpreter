@@ -118,3 +118,35 @@ test "evaluate lambdas and function calls" {
   let input2 = "(begin (define apply-twice (lambda (f x) (f (f x)))) (define add1 (lambda (x) (+ x 1))) (apply-twice add1 5))"
   assert_eq(evaluate_string(input2), 7)
 }
+
+///|
+test "environment shadowing issues - demonstrates problems" {
+  // Test 1: Variable shadowing problem - function parameters overwrite globals
+  let input1 =
+    #|(begin 
+    #|    (define x 10)
+    #|    (define f (lambda (x) (+ x 1)))
+    #|    (f 5)
+    #|    x)
+  let sexp1 = @lisp_interpreter.parse_sexp(input1)
+  let result1 = @lisp_interpreter.evaluate(sexp1)
+
+  // This test shows the problem: x should still be 10, but might be 5
+  // due to environment mutation
+  // PROBLEM DEMONSTRATED: Global x is overwritten by function parameter!
+  @json.inspect(result1, content=["Atom", "5"]) // BUG: Should be ["Atom", "10"]!
+
+  // Test 2: Function parameter collision
+  let input2 =
+    #|(begin
+    #|    (define f1 (lambda (x) (* x 2)))
+    #|    (define f2 (lambda (x) (+ x 10)))
+    #|    (begin
+    #|      (f1 5)
+    #|      (f2 3)))
+  let sexp2 = @lisp_interpreter.parse_sexp(input2)
+  let result2 = @lisp_interpreter.evaluate(sexp2)
+
+  // This should return 13, but may be affected by shared environment
+  @json.inspect(result2, content=["Atom", "13"]) // Works by accident, but environment is polluted
+}
