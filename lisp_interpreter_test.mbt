@@ -63,6 +63,10 @@ test "evaluate conditions" {
   eval_string("(< 5 2)", content=false)
   eval_string("(= 5 5)", content=true)
   eval_string("(= 5 2)", content=false)
+  eval_string("(>= 5 5)", content=true)
+  eval_string("(>= 7 3)", content=true)
+  eval_string("(<= 3 3)", content=true)
+  eval_string("(<= 2 5)", content=true)
 }
 
 // ///|
@@ -148,6 +152,14 @@ test "error handling with eval_string" {
   eval_string("(unknown_builtin 1 2)", content={
     "Err": "UnboundSymbol(\"Unbound variable: unknown_builtin\")",
   })
+  
+  // Test new comparison operators
+  eval_string("(>= 10 5)", content=true)
+  eval_string("(>= 3 3)", content=true)
+  eval_string("(>= 2 5)", content=false)
+  eval_string("(<= 5 10)", content=true)
+  eval_string("(<= 3 3)", content=true)
+  eval_string("(<= 7 2)", content=false)
 }
 
 ///|
@@ -155,8 +167,9 @@ test "comprehensive language features" {
   // Nested arithmetic
   eval_string("(+ (* 2 3) (- 10 5) (/ 8 4))", content=13)
 
-  // Complex conditionals
-  eval_string("(if (> 5 3) (+ 10 5) 0)", content=15)
+  // Complex conditionals with new operators
+  eval_string("(if (>= 5 3) (+ 10 5) 0)", content=15)
+  eval_string("(if (<= 2 5) (* 3 4) 0)", content=12)
 
   // Recursive functions
   let fibonacci =

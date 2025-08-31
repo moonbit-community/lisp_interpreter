@@ -36,11 +36,12 @@ test {
 
 ```moonbit
 test "if conditions" {
-  let condition = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp("(if (> 5 2) 42 0)"))
-  @json.inspect(condition, content=42)
-  
-  let comparison = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp("(= 5 5)"))
-  @json.inspect(comparison, content=true)
+  eval_string("(if (> 5 2) 42 0)", content=42)
+  eval_string("(= 5 5)", content=true)
+  eval_string("(< 3 7)", content=true)
+  eval_string("(> 5 4)", content=true)
+  eval_string("(>= 5 5)", content=true)
+  eval_string("(<= 3 7)", content=true)
 }
 ```
 
@@ -167,7 +168,7 @@ test {
 ## Built-in Operations
 
 - **Arithmetic**: `+`, `-`, `*`, `/`
-- **Comparison**: `=`, `<`, `>`, `<=`, `>=`
+- **Comparison**: `=`, `<`, `>`, `<=`, `>=` ✅
 - **Special Forms**: `if`, `define`, `lambda`, `begin`
 
 ## License

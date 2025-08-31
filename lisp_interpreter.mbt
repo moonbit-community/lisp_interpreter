@@ -309,6 +309,34 @@ fn apply(operator : Value, args : Array[Value]) -> Value raise EvalError {
               )
           }
         }
+        "<=" => {
+          guard args.length() == 2 else {
+            raise WrongArgumentCount(
+              "<=: expected exactly 2 arguments, got \{args.length()}",
+            )
+          }
+          match (args[0], args[1]) {
+            (Value::Number(a), Value::Number(b)) => Value::Boolean(a <= b)
+            _ =>
+              raise TypeError(
+                "<=: expected numbers, got: \{args[0]} and \{args[1]}",
+              )
+          }
+        }
+        ">=" => {
+          guard args.length() == 2 else {
+            raise WrongArgumentCount(
+              ">=: expected exactly 2 arguments, got \{args.length()}",
+            )
+          }
+          match (args[0], args[1]) {
+            (Value::Number(a), Value::Number(b)) => Value::Boolean(a >= b)
+            _ =>
+              raise TypeError(
+                ">=: expected numbers, got: \{args[0]} and \{args[1]}",
+              )
+          }
+        }
         _ => raise NotAFunction("unknown builtin function: \{name}")
       }
     _ => raise NotAFunction("not a function: \{operator}")
