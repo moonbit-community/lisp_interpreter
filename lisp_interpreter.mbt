@@ -8,6 +8,17 @@ pub(all) enum Value {
 } derive(Show)
 
 ///|
+pub impl ToJson for Value with to_json(self) {
+  match self {
+    Number(n) => n.to_json()
+    Boolean(b) => Json::boolean(b)
+    Symbol(s) => Json::string(s)
+    Function(_, _, _) => Json::string("<function>")
+    BuiltinFunction(name) => Json::string("<builtin:" + name + ">")
+  }
+}
+
+///|
 pub struct Env(Map[String, Value]) derive(Show)
 
 // ///|
@@ -52,10 +63,15 @@ pub fn Env::builtin() -> Self {
 }
 
 ///|
-pub fn evaluate(expr : Sexp) -> Sexp raise Error {
+pub fn evaluate(expr : Sexp) -> Value raise Error {
   let env = Env::builtin()
-  let result = expr.eval(env)
-  sexp_from_value(result)
+  expr.eval(env)
+}
+
+///|
+pub fn eval(s : String) -> Value raise Error {
+  let sexp = parse_sexp(s)
+  evaluate(sexp)
 }
 
 ///|
@@ -306,16 +322,5 @@ fn is_truthy(val : Value) -> Bool {
     Number(n) => n != 0
     Symbol("nil") => false
     _ => true
-  }
-}
-
-///|
-fn sexp_from_value(val : Value) -> Sexp {
-  match val {
-    Number(n) => Sexp::Atom(n.to_string())
-    Boolean(b) => Sexp::Atom(b.to_string())
-    Symbol(s) => Sexp::Atom(s)
-    Function(_, _, _) => Sexp::Atom("<function>")
-    BuiltinFunction(name) => Sexp::Atom("<builtin:" + name + ">")
   }
 }
