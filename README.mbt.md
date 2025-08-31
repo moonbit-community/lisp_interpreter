@@ -20,10 +20,10 @@ A Lisp interpreter implementation in MoonBit, featuring S-expression parsing and
 ```moonbit
 test {
   let result = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp("(+ 1 2 3)"))
-  @json.inspect(result, content=["Number", 6])
+  @json.inspect(result, content=6)
   
   let nested = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp("(* (+ 2 3) (- 8 2))"))
-  @json.inspect(nested, content=["Number", 30])
+  @json.inspect(nested, content=30)
 }
 ```
 
@@ -33,7 +33,7 @@ test {
 test {
   let program = "(begin (define x 10) (define y 5) (+ x y))"
   let result = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp(program))
-  @json.inspect(result, content=["Number", 15])
+  @json.inspect(result, content=15)
 }
 ```
 
@@ -42,10 +42,10 @@ test {
 ```moonbit
 test "if conditions" {
   let condition = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp("(if (> 5 2) 42 0)"))
-  @json.inspect(condition, content=["Number", 42])
+  @json.inspect(condition, content=42)
   
   let comparison = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp("(= 5 5)"))
-  @json.inspect(comparison, content=["Boolean", true])
+  @json.inspect(comparison, content=true)
 }
 ```
 
@@ -55,12 +55,12 @@ test "if conditions" {
 test {
   let square_func = "(begin (define square (lambda (x) (* x x))) (square 4))"
   let result = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp(square_func))
-  @json.inspect(result, content=["Number", 16])
+  @json.inspect(result, content=16)
   
   // Higher-order functions
   let higher_order = "(begin (define apply-twice (lambda (f x) (f (f x)))) (define add1 (lambda (x) (+ x 1))) (apply-twice add1 5))"
   let result2 = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp(higher_order))
-  @json.inspect(result2, content=["Number", 7])
+  @json.inspect(result2, content=7)
 }
 ```
 
@@ -76,7 +76,7 @@ test {
     #|        (* n (fact (- n 1))))) 
     #| (fact 5)) 
   let result = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp(factorial))
-  @json.inspect(result, content=["Number", 120])
+  @json.inspect(result, content=120)
 }
 ```
 
