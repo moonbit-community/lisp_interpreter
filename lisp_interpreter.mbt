@@ -101,14 +101,6 @@ fn Sexp::eval(self : Sexp, env : Env) -> Value raise EvalError {
         else_.eval(env)
       }
     }
-    // List([Atom("define"), Atom(name), value, ..rest]) => {
-    //   guard rest is [] else {
-    //     raise WrongArgumentCount("'define' requires exactly 2 arguments")
-    //   }
-    //   let value = eval(value, env)
-    //   env[name] =value
-    //   return Value::Symbol("ok")
-    // }
     List([Atom("lambda"), List(params_sexp), body, .. rest]) => {
       guard rest is [] else {
         raise WrongArgumentCount(
@@ -123,7 +115,7 @@ fn Sexp::eval(self : Sexp, env : Env) -> Value raise EvalError {
             raise TypeError("lambda: parameter must be a symbol, got: \{param}")
         }
       }
-      return Value::Function(params, body, env)
+      return Function(params, body, env)
     }
     List([]) => Symbol("nil")
     List([Atom("begin"), .. expressions]) => {
@@ -138,46 +130,34 @@ fn Sexp::eval(self : Sexp, env : Env) -> Value raise EvalError {
       env.set(name, evaluated_value)
       Value::Symbol("ok")
     }
-    List([Atom("define"), List(func_parts), body]) => {
-      guard func_parts.length() > 0 else {
-        raise TypeError("define: invalid function definition syntax")
-      }
-      match func_parts[0] {
-        Atom(name) => {
-          let params = []
-          for i = 1; i < func_parts.length(); i = i + 1 {
-            match func_parts[i] {
-              Atom(param) => params.push(param)
-              _ =>
-                raise TypeError(
-                  "define: function parameter must be a symbol, got: \{func_parts[i]}",
-                )
-            }
-          }
-          let lambda_value = Value::Function(params, body, env)
-          env.set(name, lambda_value)
-          Value::Symbol("ok")
+    List([Atom("define"), List([Atom(name), .. params_sexp]), body]) => {
+      let params = []
+      for param in params_sexp {
+        match param {
+          Atom(param) => params.push(param)
+          _ =>
+            raise TypeError(
+              "define: function parameter must be a symbol, got: \{param}",
+            )
         }
-        _ =>
-          raise TypeError(
-            "define: function name must be a symbol, got: \{func_parts[0]}",
-          )
       }
+      let lambda_value = Value::Function(params, body, env)
+      env.set(name, lambda_value)
+      Value::Symbol("ok")
     }
-    List([Atom("define"), .. rest]) => {
+    List([Atom("define"), .. rest]) =>
+      // TODO: report a generic syntax error  
       raise WrongArgumentCount(
         "define: expected exactly 2 arguments, got \{rest.length()}",
       )
-    }
-    List(elements) => {
-      // Evaluate a function call
-      let operator = elements[0].eval(env)
-      let args = []
-      for i = 1; i < elements.length(); i = i + 1 {
-        let arg = elements[i].eval(env)
-        args.push(arg)
+    List([operator, .. args]) => {
+      let operator_value = operator.eval(env)
+      let args_value = []
+      for arg in args {
+        let arg_value = arg.eval(env)
+        args_value.push(arg_value)
       }
-      apply(operator, args)
+      apply(operator_value, args_value)
     }
   }
 }
@@ -185,7 +165,7 @@ fn Sexp::eval(self : Sexp, env : Env) -> Value raise EvalError {
 ///|
 fn apply(operator : Value, args : Array[Value]) -> Value raise EvalError {
   match operator {
-    Value::Function(params, body, closure_env) => {
+    Function(params, body, closure_env) => {
       // Create a new environment with the closure's environment as parent
       let call_env = closure_env
 
@@ -208,7 +188,7 @@ fn apply(operator : Value, args : Array[Value]) -> Value raise EvalError {
           let mut result = 0
           for arg in args {
             match arg {
-              Value::Number(n) => result = result + n
+              Value::Number(n) => result += n
               _ => raise TypeError("+: expected number, got: \{arg}")
             }
           }
@@ -226,7 +206,7 @@ fn apply(operator : Value, args : Array[Value]) -> Value raise EvalError {
               let mut result = first
               for i = 1; i < args.length(); i = i + 1 {
                 match args[i] {
-                  Value::Number(n) => result = result - n
+                  Value::Number(n) => result -= n
                   _ => raise TypeError("-: expected number, got: \{args[0]}")
                 }
               }
@@ -239,7 +219,7 @@ fn apply(operator : Value, args : Array[Value]) -> Value raise EvalError {
           let mut result = 1
           for arg in args {
             match arg {
-              Value::Number(n) => result = result * n
+              Value::Number(n) => result *= n
               _ => raise TypeError("*: expected number, got: \{arg}")
             }
           }
@@ -259,7 +239,7 @@ fn apply(operator : Value, args : Array[Value]) -> Value raise EvalError {
                 match args[i] {
                   Value::Number(n) => {
                     guard n != 0 else { raise TypeError("/: division by zero") }
-                    result = result / n
+                    result /= n
                   }
                   _ => raise TypeError("/: expected number, got: \{args[i]}")
                 }
@@ -322,9 +302,9 @@ fn apply(operator : Value, args : Array[Value]) -> Value raise EvalError {
 ///|
 fn is_truthy(val : Value) -> Bool {
   match val {
-    Value::Boolean(b) => b
-    Value::Number(n) => n != 0
-    Value::Symbol("nil") => false
+    Boolean(b) => b
+    Number(n) => n != 0
+    Symbol("nil") => false
     _ => true
   }
 }
@@ -332,10 +312,10 @@ fn is_truthy(val : Value) -> Bool {
 ///|
 fn sexp_from_value(val : Value) -> Sexp {
   match val {
-    Value::Number(n) => Sexp::Atom(n.to_string())
-    Value::Boolean(b) => Sexp::Atom(b.to_string())
-    Value::Symbol(s) => Sexp::Atom(s)
-    Value::Function(_, _, _) => Sexp::Atom("<function>")
-    Value::BuiltinFunction(name) => Sexp::Atom("<builtin:" + name + ">")
+    Number(n) => Sexp::Atom(n.to_string())
+    Boolean(b) => Sexp::Atom(b.to_string())
+    Symbol(s) => Sexp::Atom(s)
+    Function(_, _, _) => Sexp::Atom("<function>")
+    BuiltinFunction(name) => Sexp::Atom("<builtin:" + name + ">")
   }
 }
