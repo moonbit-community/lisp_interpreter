@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bobzhang/lisp_interpreter"
 
+import(
+  "moonbitlang/core/immut/sorted_map"
+)
+
 // Values
 fn eval(String) -> Value raise
 
@@ -18,9 +22,10 @@ impl Show for ParseError
 impl ToJson for ParseError
 
 // Types and methods
-pub struct Env(Map[String, Value])
+pub struct Env {
+  mut inner : @sorted_map.SortedMap[String, Value]
+}
 fn Env::builtin() -> Self
-fn Env::inner(Self) -> Map[String, Value]
 impl Show for Env
 
 pub(all) enum Sexp {

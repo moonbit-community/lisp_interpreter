@@ -19,7 +19,9 @@ pub impl ToJson for Value with to_json(self) {
 }
 
 ///|
-pub struct Env { mut inner : @immut/sorted_map.SortedMap[String, Value] } derive(Show)
+pub struct Env {
+  mut inner : @immut/sorted_map.SortedMap[String, Value]
+} derive(Show)
 
 // ///|
 // fn Environment::new() -> Environment {
@@ -33,10 +35,14 @@ fn Env::set(self : Env, key : String, value : Value) -> Unit {
 }
 
 ///|
-fn Env::get(self : Env, key : String) -> Value? { self.inner.get(key) }
+fn Env::get(self : Env, key : String) -> Value? {
+  self.inner.get(key)
+}
 
 ///|
-fn Env::fork(self : Env) -> Env { { inner: self.inner } }
+fn Env::fork(self : Env) -> Env {
+  { inner: self.inner }
+}
 
 ///|
 priv suberror EvalError {
