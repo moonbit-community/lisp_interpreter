@@ -76,12 +76,14 @@ test "evaluate lambdas and function calls" {
   // Define and call a simple function
   eval_string(
     "(begin (define square (lambda (x) (* x x))) (square 4))",
-    content=16)
+    content=16,
+  )
 
   // Use a function as an argument
   eval_string(
     "(begin (define apply-twice (lambda (f x) (f (f x)))) (define add1 (lambda (x) (+ x 1))) (apply-twice add1 5))",
-    content=7)
+    content=7,
+  )
 }
 
 ///|
@@ -342,7 +344,7 @@ test "closure environment capture timing" {
     #|  (define x 2)
     #|  (f 10))
   eval_string(capture_test1, content=12) // f sees updated x=2, so 10+2=12
-  
+
   // Test 2: Multiple redefinitions - closure sees latest
   let capture_test2 =
     #|(begin
@@ -352,7 +354,7 @@ test "closure environment capture timing" {
     #|  (define y 300)
     #|  (g))
   eval_string(capture_test2, content=300) // g sees latest y=300
-  
+
   // Test 3: Direct closure creation
   let direct_test =
     #|(begin
@@ -362,7 +364,7 @@ test "closure environment capture timing" {
     #|  (define fn2 (lambda () z))
     #|  (+ (fn1) (fn2)))
   eval_string(direct_test, content=4) // Both see updated z=2, so 2+2=4
-  
+
   // Test 4: Closure created inside function gets forked environment  
   let nested_closure =
     #|(begin
@@ -379,7 +381,7 @@ test "closure environment capture timing" {
 test "define vs let semantics - NOT a bug, correct Scheme behavior" {
   // These tests demonstrate that our interpreter correctly implements Scheme semantics.
   // The behavior matches Chicken Scheme (csi) exactly.
-  
+
   // Test 1: Closures see updated global values (correct behavior)
   let shared_state =
     #|(begin
@@ -389,7 +391,7 @@ test "define vs let semantics - NOT a bug, correct Scheme behavior" {
     #|  (define x 1)
     #|  (+ (f1) (f2)))
   eval_string(shared_state, content=2) // Both see x=1, so 1+1=2 (matches csi)
-  
+
   // Test 2: Parameter shadows global
   let param_shadow_test =
     #|(begin
@@ -399,7 +401,7 @@ test "define vs let semantics - NOT a bug, correct Scheme behavior" {
     #|       ((lambda () x))))
     #|  (test-fn 20))
   eval_string(param_shadow_test, content=20) // Parameter x=20 shadows global x=10
-  
+
   // Test 3: Nested parameter shadowing
   let nested_params =
     #|(begin
@@ -410,7 +412,7 @@ test "define vs let semantics - NOT a bug, correct Scheme behavior" {
     #|      100))
     #|   10))
   eval_string(nested_params, content=110) // Inner lambda sees outer's x=10, y=100
-  
+
   // Test 4: Closures capture environment correctly
   let mutation_problem =
     #|(begin
@@ -420,7 +422,7 @@ test "define vs let semantics - NOT a bug, correct Scheme behavior" {
     #|     (+ (get-x) x))
     #|   10))
   eval_string(mutation_problem, content=11) // get-x sees global x=1, parameter x=10
-  
+
   // Test 5: define inside lambda mutates (Scheme standard behavior!)
   // Verified with csi: returns 100, NOT 50
   let define_mutation =
@@ -441,7 +443,7 @@ test "let vs define - different semantics (not a bug)" {
   // This test demonstrates that `let` and `define` have fundamentally different semantics.
   // Our interpreter correctly implements define semantics (verified with csi).
   // To implement proper `let`, we'd need a separate construct.
-  
+
   // Proper let behavior using nested lambdas (creates new bindings)
   let let_via_lambda =
     #|(begin
@@ -453,7 +455,7 @@ test "let vs define - different semantics (not a bug)" {
     #|      (lambda () x)))
     #|   10))
   eval_string(let_via_lambda, content=10) // Inner x=20 is a new binding, doesn't affect closure
-  
+
   // define inside lambda (mutates existing binding - correct Scheme behavior)
   let define_inside_lambda =
     #|(begin
@@ -465,7 +467,7 @@ test "let vs define - different semantics (not a bug)" {
     #|         (f))))
     #|   10))
   eval_string(define_inside_lambda, content=20) // Correct: define mutates (verified with csi)
-  
+
   // This shows why we need a separate `let` construct if we want proper lexical scoping
   // The current behavior is correct for `define`, but `let` would need different implementation
 }

@@ -140,43 +140,44 @@ fn Sexp::eval(self : Sexp, env : Env) -> Value raise EvalError {
       }
       return Function(params, body, env)
     }
-    
+
     // Standard let: parallel binding
     List([Atom("let"), List(bindings), body]) => {
       // Transform let into immediately-invoked lambda
       // (let ((x 10) (y 20)) body) -> ((lambda (x y) body) 10 20)
-      
+
       let vars = []
       let vals = []
-      
       for binding in bindings {
         match binding {
           List([Sexp::Atom(name), val]) => {
             vars.push(Sexp::Atom(name))
             vals.push(val)
           }
-          _ => raise TypeError("let: binding must be (name value), got: \{binding}")
+          _ =>
+            raise TypeError(
+              "let: binding must be (name value), got: \{binding}",
+            )
         }
       }
-      
+
       // Create lambda expression
       let lambda_expr = List([Atom("lambda"), List(vars), body])
-      
+
       // Create application with the lambda and values
       let application = [lambda_expr]
       for val in vals {
         application.push(val)
       }
-      
+
       // Evaluate the transformed expression
       List(application).eval(env)
     }
-    
+
     // Sequential let: each binding can see previous ones
     List([Atom("let*"), List(bindings), body]) => {
       // Sequential let - each binding can reference previous ones
       let let_env = env.fork()
-      
       for binding in bindings {
         match binding {
           List([Sexp::Atom(name), val_expr]) => {
@@ -184,29 +185,34 @@ fn Sexp::eval(self : Sexp, env : Env) -> Value raise EvalError {
             let value = val_expr.eval(let_env)
             let_env.set(name, value)
           }
-          _ => raise TypeError("let*: binding must be (name value), got: \{binding}")
+          _ =>
+            raise TypeError(
+              "let*: binding must be (name value), got: \{binding}",
+            )
         }
       }
-      
+
       // Evaluate body in the new environment
       body.eval(let_env)
     }
-    
+
     // Recursive let: for mutual recursion
     List([Atom("letrec"), List(bindings), body]) => {
       // Recursive let - all names are bound before evaluation
       let letrec_env = env.fork()
-      
+
       // First pass: bind all names to undefined
       for binding in bindings {
         match binding {
-          List([Sexp::Atom(name), _]) => {
+          List([Sexp::Atom(name), _]) =>
             letrec_env.set(name, Symbol("undefined"))
-          }
-          _ => raise TypeError("letrec: binding must be (name value), got: \{binding}")
+          _ =>
+            raise TypeError(
+              "letrec: binding must be (name value), got: \{binding}",
+            )
         }
       }
-      
+
       // Second pass: evaluate and update bindings
       for binding in bindings {
         match binding {
@@ -217,11 +223,10 @@ fn Sexp::eval(self : Sexp, env : Env) -> Value raise EvalError {
           _ => () // Already checked in first pass
         }
       }
-      
+
       // Evaluate body in the new environment
       body.eval(letrec_env)
     }
-    
     List([]) => Symbol("nil")
     List([Atom("begin"), .. expressions]) => {
       let mut result = Value::Symbol("nil")
