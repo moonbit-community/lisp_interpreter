@@ -152,7 +152,7 @@ test "error handling with eval_string" {
   eval_string("(unknown_builtin 1 2)", content={
     "Err": "UnboundSymbol(\"Unbound variable: unknown_builtin\")",
   })
-  
+
   // Test new comparison operators
   eval_string("(>= 10 5)", content=true)
   eval_string("(>= 3 3)", content=true)

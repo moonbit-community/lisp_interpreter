@@ -2,7 +2,7 @@
 pub(all) enum Sexp {
   Atom(String)
   List(Array[Sexp])
-} derive(Show, Eq, ToJson(style="flat"))
+} derive(Show, Eq, ToJson)
 
 ///|
 /// TODO(upstream):
@@ -17,7 +17,7 @@ pub suberror ParseError {
   UnmatchedParens(String)
   UnexpectedParens(String)
   UnexpectedEOF
-} derive(Show, ToJson(style="flat"))
+} derive(Show, ToJson)
 
 ///|
 priv enum Token {
@@ -80,19 +80,19 @@ fn Lexer::new(input : String) -> Lexer {
 }
 
 ///|
-fn Lexer::view(self : Lexer) -> @string.View {
+fn Lexer::view(self : Lexer) -> StringView {
   let input = self.input
   let pos = self.pos
   input.view(start_offset=pos)
 }
 
 ///|
-fn Lexer::update_view(self : Lexer, view : @string.View) -> Unit {
+fn Lexer::update_view(self : Lexer, view : StringView) -> Unit {
   self.pos = view.start_offset()
 }
 
 ///|
-fn Lexer::update_view_with_token(self : Lexer, view : @string.View) -> String {
+fn Lexer::update_view_with_token(self : Lexer, view : StringView) -> String {
   let consumed = self.input.view(
     start_offset=self.pos,
     end_offset=view.start_offset(),
@@ -213,11 +213,11 @@ test "decode_atom" {
 //     _ => fail("Unexpected token: \"\{input}\"")
 //   }
 // }
-// pub fn tokenize(input : @string.View) -> Array[@string.View] raise {
+// pub fn tokenize(input : StringView) -> Array[StringView] raise {
 //   if false {
 //     fail("may fail")
 //   }
-//   let tokens : Array[@string.View] = []
+//   let tokens : Array[StringView] = []
 //   outer~: loop input {
 //     [] => ()
 //     ['(', .. rest] => {
