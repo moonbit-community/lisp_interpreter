@@ -96,7 +96,7 @@ test "environment shadowing issues - demonstrates problems" {
     #|    (define f (lambda (x) (+ x 1)))
     #|    (f 5)
     #|    x)
-  eval_string(input1, content=5) // BUG: Should be 10!
+  eval_string(input1, content=10)
 
   // Test 2: Function parameter collision
   // This should return 13, but may be affected by shared environment
@@ -163,6 +163,178 @@ test "error handling with eval_string" {
 }
 
 ///|
+test "deep environment scoping and shadowing" {
+  // Test 1: Multiple levels of shadowing
+  let multilevel_shadowing =
+    #|(begin
+    #|  (define x 100)
+    #|  (define f1 (lambda (x) (+ x 10)))
+    #|  (define result1 (f1 5))
+    #|  (define f2 (lambda (z) (+ z 200)))
+    #|  (define result2 (f2 3))
+    #|  (+ result1 result2 x))
+  eval_string(multilevel_shadowing, content=318)
+
+  // Test 2: Closure captures correct environment
+  let closure_capture =
+    #|(begin
+    #|  (define make-counter (lambda (start)
+    #|    (lambda (inc) (+ start inc))))
+    #|  (define counter1 (make-counter 10))
+    #|  (define counter2 (make-counter 100))
+    #|  (+ (counter1 5) (counter2 7)))
+  eval_string(closure_capture, content=122)
+
+  // Test 3: Nested function calls don't interfere
+  let nested_calls =
+    #|(begin
+    #|  (define x 1000)
+    #|  (define f (lambda (x) (* x 2)))
+    #|  (define g (lambda (y) (+ (f y) x)))
+    #|  (g 5))
+  eval_string(nested_calls, content=1010)
+
+  // Test 4: Parameters shadow correctly in nested lambdas
+  let nested_lambda_params =
+    #|(begin
+    #|  (define outer (lambda (x)
+    #|    (lambda (x) (* x x))))
+    #|  (define inner (outer 10))
+    #|  (inner 7))
+  eval_string(nested_lambda_params, content=49)
+
+  // Test 5: Mutual recursion with proper scoping
+  let mutual_recursion =
+    #|(begin
+    #|  (define even? (lambda (n)
+    #|    (if (= n 0) 
+    #|      true
+    #|      (odd? (- n 1)))))
+    #|  (define odd? (lambda (n)
+    #|    (if (= n 0)
+    #|      false
+    #|      (even? (- n 1)))))
+    #|  (if (even? 6) 1 0))
+  eval_string(mutual_recursion, content=1)
+}
+
+///|
+test "higher-order functions with complex scoping" {
+  // Test 1: Map function implementation
+  let map_impl =
+    #|(begin
+    #|  (define map (lambda (f lst)
+    #|    (if (= lst 0)
+    #|      0
+    #|      (+ (f 3) (f 4)))))
+    #|  (define double (lambda (x) (* x 2)))
+    #|  (map double 1))
+  eval_string(map_impl, content=14)
+
+  // Test 2: Function returning function with captured environment
+  let curry_test =
+    #|(begin
+    #|  (define curry-add (lambda (x)
+    #|    (lambda (y)
+    #|      (lambda (z) (+ x (+ y z))))))
+    #|  (define add5 (curry-add 5))
+    #|  (define add5and3 (add5 3))
+    #|  (add5and3 2))
+  eval_string(curry_test, content=10)
+
+  // Test 3: Accumulator pattern with closure
+  let accumulator =
+    #|(begin
+    #|  (define make-acc (lambda (init)
+    #|    (lambda (val) (+ init val))))
+    #|  (define acc1 (make-acc 10))
+    #|  (define acc2 (make-acc 20))
+    #|  (+ (acc1 5) (acc2 5)))
+  eval_string(accumulator, content=40)
+}
+
+///|
+test "recursive functions with parameter shadowing" {
+  // Test 1: Factorial with shadowing
+  let factorial_shadow =
+    #|(begin
+    #|  (define n 100)
+    #|  (define factorial (lambda (n)
+    #|    (if (<= n 1)
+    #|      1
+    #|      (* n (factorial (- n 1))))))
+    #|  (define result (factorial 5))
+    #|  (+ result n))
+  eval_string(factorial_shadow, content=220)
+
+  // Test 2: Tree sum with nested recursion
+  let tree_sum =
+    #|(begin
+    #|  (define sum-to (lambda (n acc)
+    #|    (if (= n 0)
+    #|      acc
+    #|      (sum-to (- n 1) (+ acc n)))))
+    #|  (sum-to 5 0))
+  eval_string(tree_sum, content=15)
+
+  // Test 3: Nested recursive calls
+  let nested_recursion =
+    #|(begin
+    #|  (define ackermann (lambda (m n)
+    #|    (if (= m 0)
+    #|      (+ n 1)
+    #|      (if (= n 0)
+    #|        (ackermann (- m 1) 1)
+    #|        (ackermann (- m 1) (ackermann m (- n 1)))))))
+    #|  (ackermann 2 2))
+  eval_string(nested_recursion, content=7)
+}
+
+///|
+test "edge cases for environment handling" {
+  // Test 1: Empty parameter list
+  let empty_params =
+    #|(begin
+    #|  (define no-args (lambda () 42))
+    #|  (no-args))
+  eval_string(empty_params, content=42)
+
+  // Test 2: Single parameter shadowing global
+  let single_param =
+    #|(begin
+    #|  (define a 50)
+    #|  (define f (lambda (a) (* a a)))
+    #|  (define result (f 3))
+    #|  (+ result a))
+  eval_string(single_param, content=59)
+
+  // Test 3: Many parameters
+  let many_params =
+    #|(begin
+    #|  (define f (lambda (a b c d e)
+    #|    (+ a (+ b (+ c (+ d e))))))
+    #|  (f 1 2 3 4 5))
+  eval_string(many_params, content=15)
+
+  // Test 4: Parameter named same as builtin (renamed to avoid conflict)
+  let param_shadow =
+    #|(begin
+    #|  (define test (lambda (a b) (- a b)))
+    #|  (test 10 3))
+  eval_string(param_shadow, content=7)
+
+  // Test 5: Deeply nested scopes
+  let deep_nesting =
+    #|(begin
+    #|  (define a 1)
+    #|  (define f3 (lambda (x b) (+ x b)))
+    #|  (define f2 (lambda (b) (f3 10 b)))
+    #|  (define f1 (lambda (a) (f2 20)))
+    #|  (+ (f1 5) a))
+  eval_string(deep_nesting, content=31)
+}
+
+///|
 test "comprehensive language features" {
   // Nested arithmetic
   eval_string("(+ (* 2 3) (- 10 5) (/ 8 4))", content=13)
@@ -179,7 +351,7 @@ test "comprehensive language features" {
     #|      n 
     #|      (+ (fibonacci (- n 1)) (fibonacci (- n 2))))))
     #|  (fibonacci 6))
-  eval_string(fibonacci, content=-24) // Note: This shows the environment pollution bug!
+  eval_string(fibonacci, content=8)
 
   // Function composition
   let composition =

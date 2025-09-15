@@ -19,7 +19,7 @@ pub impl ToJson for Value with to_json(self) {
 }
 
 ///|
-pub struct Env(Map[String, Value]) derive(Show)
+pub struct Env { mut inner : @immut/sorted_map.SortedMap[String, Value] } derive(Show)
 
 // ///|
 // fn Environment::new() -> Environment {
@@ -27,15 +27,16 @@ pub struct Env(Map[String, Value]) derive(Show)
 // }
 
 ///|
-#alias(op_set)
 fn Env::set(self : Env, key : String, value : Value) -> Unit {
-  self.0[key] = value
+  // Persistent map update: mutate the cell to point to the new map
+  self.inner = self.inner.add(key, value)
 }
 
 ///|
-fn Env::get(self : Env, key : String) -> Value? {
-  self.0.get(key)
-}
+fn Env::get(self : Env, key : String) -> Value? { self.inner.get(key) }
+
+///|
+fn Env::fork(self : Env) -> Env { { inner: self.inner } }
 
 ///|
 priv suberror EvalError {
@@ -48,18 +49,18 @@ priv suberror EvalError {
 
 ///|
 pub fn Env::builtin() -> Self {
-  {
-    ".": BuiltinFunction("dummy"),
-    "+": BuiltinFunction("+"),
-    "-": BuiltinFunction("-"),
-    "*": BuiltinFunction("*"),
-    "/": BuiltinFunction("/"),
-    "=": BuiltinFunction("="),
-    "<": BuiltinFunction("<"),
-    ">": BuiltinFunction(">"),
-    "<=": BuiltinFunction("<="),
-    ">=": BuiltinFunction(">="),
-  }
+  let env = { inner: @immut/sorted_map.SortedMap::new() }
+  env.set(".", BuiltinFunction("dummy"))
+  env.set("+", BuiltinFunction("+"))
+  env.set("-", BuiltinFunction("-"))
+  env.set("*", BuiltinFunction("*"))
+  env.set("/", BuiltinFunction("/"))
+  env.set("=", BuiltinFunction("="))
+  env.set("<", BuiltinFunction("<"))
+  env.set(">", BuiltinFunction(">"))
+  env.set("<=", BuiltinFunction("<="))
+  env.set(">=", BuiltinFunction(">="))
+  env
 }
 
 ///|
@@ -182,10 +183,10 @@ fn Sexp::eval(self : Sexp, env : Env) -> Value raise EvalError {
 fn apply(operator : Value, args : Array[Value]) -> Value raise EvalError {
   match operator {
     Function(params, body, closure_env) => {
-      // Create a new environment with the closure's environment as parent
-      let call_env = closure_env
+      // Fork a call-local environment from the closure's environment
+      let call_env = closure_env.fork()
 
-      // Bind arguments to parameters
+      // Bind arguments to parameters (shadowing within call scope only)
       guard params.length() == args.length() else {
         raise WrongArgumentCount(
           "Expected \{params.length()} arguments, got \{args.length()}",
