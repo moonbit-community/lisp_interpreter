@@ -476,81 +476,85 @@ test "let vs define - different semantics (not a bug)" {
 test "let creates new scope without mutation" {
   // Basic let
   eval_string("(let ((x 10)) x)", content=10)
-  
+
   // Outer x unchanged after let
-  eval_string(
+  let outer_unchanged =
     #|(begin
     #|  (define x 5)
     #|  (begin
     #|    (let ((x 10))
     #|      x)
-    #|    x)), content=5))
-  
+    #|    x))
+  eval_string(outer_unchanged, content=5)
+
   // Closure captures let binding correctly
-  eval_string(
+  let closure_let =
     #|(let ((x 10))
     #|  (let ((f (lambda () x)))
     #|    (let ((x 20))
-    #|      (f)))), content=10)
-  )
-  
+    #|      (f))))
+  eval_string(closure_let, content=10)
+
   // Multiple bindings
-  eval_string(
+  let multiple_bindings =
     #|(let ((x 10)
     #|       (y 20)
     #|       (z 30))
-    #|   (+ x (+ y z))), content=60)
+    #|   (+ x (+ y z)))
+  eval_string(multiple_bindings, content=60)
 }
 
 ///|
 test "let evaluates bindings in parallel" {
   // Bindings see outer scope, not each other
-  eval_string(
+  let parallel_bindings =
     #|(begin
     #|  (define x 5)
     #|  (let ((x 10)
     #|        (y x))  ; y gets outer x (5), not let's x (10)
-    #|    (+ x y))), content=15)  // 10 + 5 = 15
-  )
-  
+    #|    (+ x y)))
+  eval_string(parallel_bindings, content=15) // 10 + 5 = 15
+
   // Nested let with parallel evaluation
-  eval_string(
+  let nested_parallel =
     #|(let ((x 1))
     #|  (let ((x 2) (y x))  ; y gets outer x (1)
     #|    (let ((x 3) (z x))  ; z gets middle x (2)
-    #|      (+ x (+ y z))))), content=6  // 3 + 1 + 2 = 6
+    #|      (+ x (+ y z)))))
+  eval_string(nested_parallel, content=6) // 3 + 1 + 2 = 6
 }
 
 ///|
 test "let* evaluates bindings sequentially" {
   // Basic sequential binding
-  eval_string(
+  let sequential_basic =
     #|(let* ((x 10)
     #|        (y x))  ; y gets x from this let*
-    #|   (+ x y)), content=20  // 10 + 10 = 20
-  )
-  
+    #|   (+ x y))
+  eval_string(sequential_basic, content=20) // 10 + 10 = 20
+
   // Multiple sequential dependencies
-  eval_string(
+  let sequential_multiple =
     #|(let* ((x 10)
     #|        (y x)
     #|        (z (+ x y)))
-    #|   (+ x (+ y z))), content=40  // 10 + 10 + 20 = 40
-  )
-  
+    #|   (+ x (+ y z)))
+  eval_string(sequential_multiple, content=40) // 10 + 10 + 20 = 40
+
   // let* shadowing in sequence
-  eval_string(
+  let sequential_shadow =
     #|(begin
     #|  (define x 1)
     #|  (let* ((x 10)
     #|         (y x))  ; y gets the new x (10)
-    #|    (+ x y))), content=20)
+    #|    (+ x y)))
+  eval_string(sequential_shadow, content=20)
 }
 
 ///|
 test "letrec allows mutual recursion" {
   // Even/odd mutual recursion
-  eval_string(
+  let even_odd_6 =
     #|(letrec ((even? (lambda (n)
     #|                   (if (= n 0)
     #|                     true
@@ -559,10 +563,9 @@ test "letrec allows mutual recursion" {
     #|                  (if (= n 0)
     #|                    false
     #|                    (even? (- n 1))))))
-    #|   (if (even? 6) 1 0)), content=1)
-  )
-  
-  eval_string(
+    #|   (if (even? 6) 1 0))
+  eval_string(even_odd_6, content=1)
+  let even_odd_5 =
     #|(letrec ((even? (lambda (n)
     #|                   (if (= n 0)
     #|                     true
@@ -571,41 +574,42 @@ test "letrec allows mutual recursion" {
     #|                  (if (= n 0)
     #|                    false
     #|                    (even? (- n 1))))))
-    #|   (if (odd? 5) 1 0)), content=1)
-  )
-  
+    #|   (if (odd? 5) 1 0))
+  eval_string(even_odd_5, content=1)
+
   // Self-recursive function in letrec
-  eval_string(
+  let factorial_letrec =
     #|(letrec ((fact (lambda (n)
     #|                  (if (= n 0)
     #|                    1
     #|                    (* n (fact (- n 1)))))))
-    #|   (fact 5)), content=120)
+    #|   (fact 5))
+  eval_string(factorial_letrec, content=120)
 }
 
 ///|
 test "let vs define semantics comparison" {
   // let doesn't mutate - creates new binding
-  eval_string(
+  let let_no_mutate =
     #|(let ((x 10))
     #|  (let ((f (lambda () x)))
     #|    (let ((x 20))
-    #|      (f)))), content=10)  // Closure sees original x=10
-  )
-  
+    #|      (f))))
+  eval_string(let_no_mutate, content=10) // Closure sees original x=10
+
   // define mutates - same test with define shows different behavior
-  eval_string(
+  let define_mutates =
     #|((lambda (x)
     #|   (begin
     #|     (define f (lambda () x))
     #|     (begin
     #|       (define x 20)
     #|       (f))))
-    #| 10), content=20  // Closure sees mutated x=20
-  )
-  
+    #| 10)
+  eval_string(define_mutates, content=20) // Closure sees mutated x=20
+
   // Demonstrating the key difference
-  eval_string(
+  let key_difference =
     #|(begin
     #|  (define result1 
     #|    (let ((x 10))
@@ -618,7 +622,8 @@ test "let vs define semantics comparison" {
     #|       (define x 20)
     #|       (get-x))
     #|     10))
-    #|  (+ result1 result2)), content=30  // 10 + 20 = 30
+    #|  (+ result1 result2))
+  eval_string(key_difference, content=30) // 10 + 20 = 30
 }
 
 ///|
