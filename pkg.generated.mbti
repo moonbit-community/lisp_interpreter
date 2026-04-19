@@ -1,40 +1,38 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bobzhang/lisp_interpreter"
 
-import(
-  "moonbitlang/core/immut/sorted_map"
-)
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/immut/sorted_map",
+}
 
 // Values
-fn eval(String) -> Value raise
+pub fn eval(String) -> Value raise
 
-fn evaluate(Sexp) -> Value raise
+pub fn evaluate(Sexp) -> Value raise
 
-fn parse_sexp(String) -> Sexp raise
+pub fn parse_sexp(String) -> Sexp raise
 
 // Errors
 pub suberror ParseError {
   UnmatchedParens(String)
   UnexpectedParens(String)
   UnexpectedEOF
-}
-impl Show for ParseError
-impl ToJson for ParseError
+} derive(ToJson, @debug.Debug)
+pub impl Show for ParseError
 
 // Types and methods
 pub struct Env {
   mut inner : @sorted_map.SortedMap[String, Value]
-}
-fn Env::builtin() -> Self
-impl Show for Env
+} derive(@debug.Debug)
+pub fn Env::builtin() -> Self
+pub impl Show for Env
 
 pub(all) enum Sexp {
   Atom(String)
   List(Array[Sexp])
-}
-impl Eq for Sexp
-impl Show for Sexp
-impl ToJson for Sexp
+} derive(Eq, ToJson, @debug.Debug)
+pub impl Show for Sexp
 
 pub(all) enum Value {
   Number(Int)
@@ -42,9 +40,9 @@ pub(all) enum Value {
   Symbol(String)
   Function(Array[String], Sexp, Env)
   BuiltinFunction(String)
-}
-impl Show for Value
-impl ToJson for Value
+} derive(@debug.Debug)
+pub impl Show for Value
+pub impl ToJson for Value
 
 // Type aliases
 

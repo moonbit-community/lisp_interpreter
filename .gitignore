@@ -1,4 +1,4 @@
 target/
 .mooncakes/
 .DS_Store
-logs.json
+logs.json_build/

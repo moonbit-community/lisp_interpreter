@@ -3,7 +3,7 @@
 ///|
 test "parse extra tokens" {
   let input = "(hello) world"
-  @json.inspect(try? @lisp_interpreter.parse_sexp(input), content={
+  json_inspect(try? @lisp_interpreter.parse_sexp(input), content={
     "Err": ["UnmatchedParens", "unexpected tokens at the end"],
   })
 }
@@ -11,7 +11,7 @@ test "parse extra tokens" {
 ///|
 test "parse unexpected closing paren" {
   let input = ")hello"
-  @json.inspect(try? @lisp_interpreter.parse_sexp(input), content={
+  json_inspect(try? @lisp_interpreter.parse_sexp(input), content={
     "Err": ["UnexpectedParens", "unexpected closing parenthesis"],
   })
 }
@@ -20,14 +20,14 @@ test "parse unexpected closing paren" {
 test "parse simple" {
   let input = "(hello world)"
   let result = @lisp_interpreter.parse_sexp(input)
-  @json.inspect(result, content=["List", [["Atom", "hello"], ["Atom", "world"]]])
+  json_inspect(result, content=["List", [["Atom", "hello"], ["Atom", "world"]]])
 }
 
 ///|
 test "parse nested" {
   let input = "(define (square x) (* x x))"
   let result = @lisp_interpreter.parse_sexp(input)
-  @json.inspect(result, content=[
+  json_inspect(result, content=[
     "List",
     [
       ["Atom", "define"],
@@ -51,7 +51,7 @@ test "parse error" {
 ///|
 test "parse empty" {
   let input = ""
-  @json.inspect(try? @lisp_interpreter.parse_sexp(input), content={
+  json_inspect(try? @lisp_interpreter.parse_sexp(input), content={
     "Err": "UnexpectedEOF",
   })
 }
@@ -60,7 +60,7 @@ test "parse empty" {
 test "parse parens" {
   let input = "(hello (world))"
   let result = @lisp_interpreter.parse_sexp(input)
-  @json.inspect(result, content=[
+  json_inspect(result, content=[
     "List",
     [["Atom", "hello"], ["List", [["Atom", "world"]]]],
   ])
