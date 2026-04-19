@@ -5,7 +5,7 @@ pub(all) enum Value {
   Symbol(String)
   Function(Array[String], Sexp, Env)
   BuiltinFunction(String)
-} derive(Show)
+} derive(Debug)
 
 ///|
 pub impl ToJson for Value with to_json(self) {
@@ -20,8 +20,8 @@ pub impl ToJson for Value with to_json(self) {
 
 ///|
 pub struct Env {
-  mut inner : @immut/sorted_map.SortedMap[String, Value]
-} derive(Show)
+  mut inner : @sorted_map.SortedMap[String, Value]
+} derive(Debug)
 
 // ///|
 // fn Environment::new() -> Environment {
@@ -51,11 +51,11 @@ priv suberror EvalError {
   NotAFunction(String)
   WrongArgumentCount(String)
   TypeError(String)
-} derive(Show)
+} derive(Debug)
 
 ///|
 pub fn Env::builtin() -> Self {
-  let env = { inner: @immut/sorted_map.SortedMap::new() }
+  let env = { inner: @sorted_map.SortedMap::new() }
   env.set(".", BuiltinFunction("dummy"))
   env.set("+", BuiltinFunction("+"))
   env.set("-", BuiltinFunction("-"))
@@ -91,7 +91,7 @@ fn Sexp::eval(self : Sexp, env : Env) -> Value raise EvalError {
       // Try parsing as an integer
       if token is ['0'..='9', ..] || token is ['-', '0'..='9', ..] {
         try {
-          let num = @strconv.parse_int(token)
+          let num = @string.parse_int(token)
           return Value::Number(num)
         } catch {
           _ => () // Not a number, continue
@@ -445,4 +445,19 @@ fn is_truthy(val : Value) -> Bool {
     Symbol("nil") => false
     _ => true
   }
+}
+
+///|
+pub impl Show for Value with output(self, logger) {
+  logger.write_string(@debug.render(self.to_repr(), max_depth=2147483647))
+}
+
+///|
+pub impl Show for Env with output(self, logger) {
+  logger.write_string(@debug.render(self.to_repr(), max_depth=2147483647))
+}
+
+///|
+impl Show for EvalError with output(self, logger) {
+  logger.write_string(@debug.render(self.to_repr(), max_depth=2147483647))
 }
