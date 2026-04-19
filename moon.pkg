@@ -1,0 +1,8 @@
+import {
+  "moonbitlang/core/array",
+  "moonbitlang/core/builtin",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/immut/sorted_map",
+  "moonbitlang/core/json",
+  "moonbitlang/core/string",
+}

@@ -2,7 +2,7 @@
 pub(all) enum Sexp {
   Atom(String)
   List(Array[Sexp])
-} derive(Show, Eq, ToJson)
+} derive(Debug, Eq, ToJson)
 
 ///|
 /// TODO(upstream):
@@ -17,7 +17,7 @@ pub suberror ParseError {
   UnmatchedParens(String)
   UnexpectedParens(String)
   UnexpectedEOF
-} derive(Show, ToJson)
+} derive(Debug, ToJson)
 
 ///|
 priv enum Token {
@@ -47,19 +47,21 @@ pub fn parse_sexp(input : String) -> Sexp raise {
 
 ///|
 fn parse_tokens(
-  tokens : @array.View[Token],
-) -> (Sexp, @array.View[Token]) raise ParseError {
+  tokens : ArrayView[Token],
+) -> (Sexp, ArrayView[Token]) raise ParseError {
   match tokens {
     [] => raise UnexpectedEOF
     [Lparen, .. rest] => {
       let subexps = []
-      loop rest {
-        [] => raise UnmatchedParens("missing closing parenthesis")
-        [RParen, .. rest] => (List(subexps), rest)
-        _ as r => {
-          let (subexp, remaining) = parse_tokens(r)
-          subexps.push(subexp)
-          continue remaining
+      for view = rest {
+        match view {
+          [] => raise UnmatchedParens("missing closing parenthesis")
+          [RParen, .. rest] => break (List(subexps), rest)
+          _ as r => {
+            let (subexp, remaining) = parse_tokens(r)
+            subexps.push(subexp)
+            continue remaining
+          }
         }
       }
     }
@@ -104,26 +106,28 @@ fn Lexer::update_view_with_token(self : Lexer, view : StringView) -> String {
 ///|
 fn Lexer::decode(self : Lexer) -> Array[Token] raise {
   let tokens : Array[Token] = []
-  loop self.view() {
-    [] => ()
-    ['(', .. rest] => {
-      tokens.push(Lparen)
-      continue rest
-    }
-    [')', .. rest] => {
-      tokens.push(RParen)
-      continue rest
-    }
-    [' ' | '\n' | '\t', .. rest] => continue rest
-    ['"', ..] as view => {
-      self.update_view(view) // mark theh position, do the work
-      tokens.push(self.decode_string())
-      continue self.view()
-    }
-    _ as view => {
-      self.update_view(view)
-      tokens.push(self.decode_atom())
-      continue self.view()
+  for view = self.view() {
+    match view {
+      [] => break
+      ['(', .. rest] => {
+        tokens.push(Lparen)
+        continue rest
+      }
+      [')', .. rest] => {
+        tokens.push(RParen)
+        continue rest
+      }
+      [' ' | '\n' | '\t', .. rest] => continue rest
+      ['"', ..] as view => {
+        self.update_view(view) // mark theh position, do the work
+        tokens.push(self.decode_string())
+        continue self.view()
+      }
+      _ as view => {
+        self.update_view(view)
+        tokens.push(self.decode_atom())
+        continue self.view()
+      }
     }
   }
   tokens
@@ -136,11 +140,13 @@ fn Lexer::decode_string(self : Lexer) -> Token raise {
     ['"', .. next] => next
     _ => fail("expected \" in the beginning of string")
   }
-  let next = loop next {
-    ['"', .. next] => next
-    ['\n', ..] => fail("unexpected newline in string")
-    [_, .. rest] => continue rest
-    [] => fail("unexpected end of input")
+  let next = for view = next {
+    match view {
+      ['"', .. next] => break next
+      ['\n', ..] => fail("unexpected newline in string")
+      [_, .. rest] => continue rest
+      [] => fail("unexpected end of input")
+    }
   }
   Atom(self.update_view_with_token(next))
 }
@@ -149,16 +155,16 @@ fn Lexer::decode_string(self : Lexer) -> Token raise {
 test "decode_string" {
   fn decode_string(s) {
     Ok(Lexer::new(s).decode_string()) catch {
-      Failure(err) => Err(err.split("FAILED:")[1:].to_string()) // FIXME: upstream
+      @builtin.Failure(err) => Err(err.split("FAILED:")[1:].to_string()) // FIXME: upstream
       err => Err(err.to_string())
     }
   }
 
-  @json.inspect(decode_string("\"hello\""), content={ "Ok": "\"hello\"" })
-  @json.inspect(decode_string("\"hello\n\""), content={
+  json_inspect(decode_string("\"hello\""), content={ "Ok": "\"hello\"" })
+  json_inspect(decode_string("\"hello\n\""), content={
     "Err": "[\" unexpected newline in string\"]",
   })
-  @json.inspect(
+  json_inspect(
     decode_string(
       (
         #|"abc"
@@ -166,15 +172,17 @@ test "decode_string" {
     ),
     content={ "Ok": "\"abc\"" },
   )
-  @json.inspect(decode_string("\"d..\""), content={ "Ok": "\"d..\"" })
+  json_inspect(decode_string("\"d..\""), content={ "Ok": "\"d..\"" })
 }
 
 ///|
 /// TODO(upstream): fmt add `///|`
 fn Lexer::decode_atom(self : Lexer) -> Token {
-  let next = loop self.view() {
-    [] | ['(' | ')' | ' ' | '\n' | '\t', ..] as next => next
-    [_, .. rest] => continue rest
+  let next = for view = self.view() {
+    match view {
+      [] | ['(' | ')' | ' ' | '\n' | '\t', ..] as next => break next
+      [_, .. rest] => continue rest
+    }
   }
   Atom(self.update_view_with_token(next))
 }
@@ -183,19 +191,19 @@ fn Lexer::decode_atom(self : Lexer) -> Token {
 test "decode_atom" {
   // only toplevel can have labelled arguments  
   // fn aux(s,content~) raise{
-  //   @json.inspect(s, content~)
+  //   json_inspect(s, content~)
   // }  
   fn decode_atom(s) {
     Lexer::new(s).decode_atom()
     // catch {
-    //   Failure(err) => Err(err.split("FAILED:")[1:].to_string()) // FIXME: upstream
+    //   @builtin.Failure(err) => Err(err.split("FAILED:")[1:].to_string()) // FIXME: upstream
     //   err => Err(err.to_string())
     // }
   }
 
-  @json.inspect(decode_atom("hello "), content="hello")
-  @json.inspect(decode_atom("hell("), content="hell")
-  @json.inspect(decode_atom("hello+ "), content="hello+")
+  json_inspect(decode_atom("hello "), content="hello")
+  json_inspect(decode_atom("hell("), content="hell")
+  json_inspect(decode_atom("hello+ "), content="hello+")
 }
 
 ///|
@@ -246,18 +254,18 @@ test "decode_atom" {
 test "decode" {
   fn tokenize(s) {
     Ok(Lexer::new(s).decode()) catch {
-      Failure(err) => Err(err.split("FAILED:")[1:].to_string()) // FIXME: upstream
+      @builtin.Failure(err) => Err(err.split("FAILED:")[1:].to_string()) // FIXME: upstream
       err => Err(err.to_string())
     }
   }
 
-  @json.inspect(tokenize("(hello world)"), content={
+  json_inspect(tokenize("(hello world)"), content={
     "Ok": ["(", "hello", "world", ")"],
   })
-  @json.inspect(tokenize("(hello \"world\")"), content={
+  json_inspect(tokenize("(hello \"world\")"), content={
     "Ok": ["(", "hello", "\"world\"", ")"],
   })
-  @json.inspect(tokenize("(hello \"world\")"), content={
+  json_inspect(tokenize("(hello \"world\")"), content={
     "Ok": ["(", "hello", "\"world\"", ")"],
   })
 }
@@ -280,46 +288,46 @@ test "decode" {
 test {
   fn tokenize(s) {
     Ok(Lexer::new(s).decode()) catch {
-      Failure(err) => Err(err.split("FAILED:")[1:].to_string()) // FIXME: upstream
+      @builtin.Failure(err) => Err(err.split("FAILED:")[1:].to_string()) // FIXME: upstream
       err => Err(err.to_string())
     }
   }
 
   let tokens = tokenize("(begin (define x 10) (define y 5) (+ x y))")
   // let tokens = tokenize(v)
-  @json.inspect(tokens, content={
+  json_inspect(tokens, content={
     "Ok": [
       "(", "begin", "(", "define", "x", "10", ")", "(", "define", "y", "5", ")",
       "(", "+", "x", "y", ")", ")",
     ],
   })
   let tokens = tokenize("(if (> 5 2) 42 0)")
-  @json.inspect(tokens, content={
+  json_inspect(tokens, content={
     "Ok": ["(", "if", "(", ">", "5", "2", ")", "42", "0", ")"],
   })
   let tokens = tokenize("(= 5 5)")
-  @json.inspect(tokens, content={ "Ok": ["(", "=", "5", "5", ")"] })
+  json_inspect(tokens, content={ "Ok": ["(", "=", "5", "5", ")"] })
 }
 
 ///|
 test "tokenize" {
   let input = "(hello world)"
   let tokens = Lexer::new(input).decode()
-  @json.inspect(tokens, content=["(", "hello", "world", ")"])
+  json_inspect(tokens, content=["(", "hello", "world", ")"])
 }
 
 ///|
 test "tokenize unicode" {
   let input = "(你好 世界)"
   let tokens = Lexer::new(input).decode()
-  @json.inspect(tokens, content=["(", "你好", "世界", ")"])
+  json_inspect(tokens, content=["(", "你好", "世界", ")"])
 }
 
 ///|
 test "tokenize unicode emoji" {
   let input = "(👋🏻 世界)"
   let tokens = Lexer::new(input).decode()
-  @json.inspect(tokens, content=["(", "👋🏻", "世界", ")"])
+  json_inspect(tokens, content=["(", "👋🏻", "世界", ")"])
 }
 
 ///|
@@ -335,3 +343,13 @@ test "tokenize unicode emoji" {
 //     }
 //   }
 // }
+
+///|
+pub impl Show for Sexp with output(self, logger) {
+  logger.write_string(@debug.render(self.to_repr(), max_depth=2147483647))
+}
+
+///|
+pub impl Show for ParseError with output(self, logger) {
+  logger.write_string(@debug.render(self.to_repr(), max_depth=2147483647))
+}

@@ -45,10 +45,10 @@ fn eval_string(
     let result = @lisp_interpreter.evaluate(sexp)
     result.to_json()
   } catch {
-    Failure(err) => { "Err": err.split("FAILED:")[1:].to_string() }
+    @builtin.Failure(err) => { "Err": err.split("FAILED:")[1:].to_string() }
     err => { "Err": err.to_string() }
   }
-  @json.inspect(json, content?, loc~, args_loc~)
+  json_inspect(json, content?, loc~, args_loc~)
 }
 
 ///|
