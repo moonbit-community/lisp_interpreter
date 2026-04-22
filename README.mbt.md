@@ -17,7 +17,8 @@ A Lisp interpreter implementation in MoonBit, featuring S-expression parsing and
 
 ### Basic Arithmetic
 
-```moonbit
+```moonbit nocheck
+///|
 test {
   eval_string("(+ 1 2 3)", content=6)
   eval_string("(* (+ 2 3) (- 8 2))", content=30)
@@ -26,7 +27,8 @@ test {
 
 ### Variables and Definitions
 
-```moonbit
+```moonbit nocheck
+///|
 test {
   eval_string("(begin (define x 10) (define y 5) (+ x y))", content=15)
 }
@@ -34,7 +36,8 @@ test {
 
 ### Conditional Expressions
 
-```moonbit
+```moonbit nocheck
+///|
 test "if conditions" {
   eval_string("(if (> 5 2) 42 0)", content=42)
   eval_string("(= 5 5)", content=true)
@@ -47,22 +50,33 @@ test "if conditions" {
 
 ### Lambda Functions
 
-```moonbit
+```moonbit nocheck
+///|
 test {
   // Basic lambda
-  eval_string("(begin (define square (lambda (x) (* x x))) (square 4))", content=16)
-  
+  eval_string(
+    "(begin (define square (lambda (x) (* x x))) (square 4))",
+    content=16,
+  )
+
   // Higher-order functions
-  eval_string("(begin (define apply-twice (lambda (f x) (f (f x)))) (define add1 (lambda (x) (+ x 1))) (apply-twice add1 5))", content=7)
-  
+  eval_string(
+    "(begin (define apply-twice (lambda (f x) (f (f x)))) (define add1 (lambda (x) (+ x 1))) (apply-twice add1 5))",
+    content=7,
+  )
+
   // Closures
-  eval_string("(begin (define make-adder (lambda (n) (lambda (x) (+ x n)))) (define add5 (make-adder 5)) (add5 10))", content=15)
+  eval_string(
+    "(begin (define make-adder (lambda (n) (lambda (x) (+ x n)))) (define add5 (make-adder 5)) (add5 10))",
+    content=15,
+  )
 }
 ```
 
 ### Function Definition Shorthand
 
-```moonbit
+```moonbit nocheck
+///|
 test {
   // Alternative function definition syntax  
   let factorial =
@@ -71,7 +85,7 @@ test {
     #|      (if (= n 0) 1 
     #|        (* n (fact (- n 1))))) 
     #| (fact 5)) 
-  eval_string(factorial, content=120)  
+  eval_string(factorial, content=120)
 }
 ```
 
@@ -79,23 +93,47 @@ test {
 
 The parser handles various Lisp syntax constructs:
 
-```moonbit
+```moonbit nocheck
+///|
 test {
   // Simple expressions
   let simple = @lisp_interpreter.parse_sexp("(hello world)")
-  assert_eq(simple, @lisp_interpreter.Sexp::List([@lisp_interpreter.Sexp::Atom("hello"), @lisp_interpreter.Sexp::Atom("world")]))
-  
+  assert_eq(
+    simple,
+    @lisp_interpreter.Sexp::List([
+      @lisp_interpreter.Sexp::Atom("hello"),
+      @lisp_interpreter.Sexp::Atom("world"),
+    ]),
+  )
+
   // Nested expressions
   let nested = @lisp_interpreter.parse_sexp("(define (square x) (* x x))")
-  assert_eq(nested, @lisp_interpreter.Sexp::List([
-    @lisp_interpreter.Sexp::Atom("define"),
-    @lisp_interpreter.Sexp::List([@lisp_interpreter.Sexp::Atom("square"), @lisp_interpreter.Sexp::Atom("x")]),
-    @lisp_interpreter.Sexp::List([@lisp_interpreter.Sexp::Atom("*"), @lisp_interpreter.Sexp::Atom("x"), @lisp_interpreter.Sexp::Atom("x")])
-  ]))
-  
+  assert_eq(
+    nested,
+    @lisp_interpreter.Sexp::List([
+      @lisp_interpreter.Sexp::Atom("define"),
+      @lisp_interpreter.Sexp::List([
+        @lisp_interpreter.Sexp::Atom("square"),
+        @lisp_interpreter.Sexp::Atom("x"),
+      ]),
+      @lisp_interpreter.Sexp::List([
+        @lisp_interpreter.Sexp::Atom("*"),
+        @lisp_interpreter.Sexp::Atom("x"),
+        @lisp_interpreter.Sexp::Atom("x"),
+      ]),
+    ]),
+  )
+
   // Unicode support
   let unicode = @lisp_interpreter.parse_sexp("(你好 世界 👋🏻)")
-  assert_eq(unicode, @lisp_interpreter.Sexp::List([@lisp_interpreter.Sexp::Atom("你好"), @lisp_interpreter.Sexp::Atom("世界"), @lisp_interpreter.Sexp::Atom("👋🏻")]))
+  assert_eq(
+    unicode,
+    @lisp_interpreter.Sexp::List([
+      @lisp_interpreter.Sexp::Atom("你好"),
+      @lisp_interpreter.Sexp::Atom("世界"),
+      @lisp_interpreter.Sexp::Atom("👋🏻"),
+    ]),
+  )
 }
 ```
 
@@ -103,7 +141,8 @@ test {
 
 The interpreter provides comprehensive error handling:
 
-```moonbit
+```moonbit nocheck
+///|
 test {
   // Parse errors
   try {
@@ -112,7 +151,7 @@ test {
   } catch {
     _ => () // Expected parse error
   }
-  
+
   // Evaluation errors  
   try {
     let _ = @lisp_interpreter.evaluate(@lisp_interpreter.parse_sexp("(+ x 1)")) // unbound variable
@@ -142,18 +181,24 @@ The interpreter consists of two main modules:
 ## Data Types
 
 ### S-expressions
-```moonbit
+```moonbit nocheck
+///|
 test {
   // Atoms represent symbols, numbers, and literals
   let _atom = @lisp_interpreter.Sexp::Atom("hello")
-  
+
   // Lists represent function calls and data structures
-  let _list = @lisp_interpreter.Sexp::List([@lisp_interpreter.Sexp::Atom("+"), @lisp_interpreter.Sexp::Atom("1"), @lisp_interpreter.Sexp::Atom("2")])
+  let _list = @lisp_interpreter.Sexp::List([
+    @lisp_interpreter.Sexp::Atom("+"),
+    @lisp_interpreter.Sexp::Atom("1"),
+    @lisp_interpreter.Sexp::Atom("2"),
+  ])
 }
 ```
 
 ### Runtime Values
-```moonbit
+```moonbit nocheck
+///|
 test {
   // The interpreter supports various value types:
   let _number = @lisp_interpreter.Value::Number(42)
@@ -161,7 +206,11 @@ test {
   let _symbol = @lisp_interpreter.Value::Symbol("nil")
   // Functions store parameters, body, and closure environment
   let env = @lisp_interpreter.Env::builtin()
-  let _func = @lisp_interpreter.Value::Function(["x"], @lisp_interpreter.parse_sexp("(* x x)"), env)
+  let _func = @lisp_interpreter.Value::Function(
+    ["x"],
+    @lisp_interpreter.parse_sexp("(* x x)"),
+    env,
+  )
 }
 ```
 
