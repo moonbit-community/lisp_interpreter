@@ -618,9 +618,10 @@ test "let vs define semantics comparison" {
     #|          (get-x)))))
     #|  (define result2
     #|    ((lambda (x)
-    #|       (define get-x (lambda () x))
-    #|       (define x 20)
-    #|       (get-x))
+    #|       (begin
+    #|         (define get-x (lambda () x))
+    #|         (define x 20)
+    #|         (get-x)))
     #|     10))
     #|  (+ result1 result2))
   eval_string(key_difference, content=30) // 10 + 20 = 30
