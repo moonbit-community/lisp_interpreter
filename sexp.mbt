@@ -100,7 +100,7 @@ fn Lexer::update_view_with_token(self : Lexer, view : StringView) -> String {
     end_offset=view.start_offset(),
   )
   self.pos = view.start_offset()
-  consumed.to_string()
+  consumed.to_owned()
 }
 
 ///|
