@@ -118,6 +118,15 @@ fn Lexer::decode(self : Lexer) -> Array[Token] raise {
         continue rest
       }
       [' ' | '\n' | '\t', .. rest] => continue rest
+      [';', .. rest] => {
+        let next = for view = rest {
+          match view {
+            [] | ['\n', ..] as next => break next
+            [_, .. rest] => continue rest
+          }
+        }
+        continue next
+      }
       ['"', ..] as view => {
         self.update_view(view) // mark theh position, do the work
         tokens.push(self.decode_string())
