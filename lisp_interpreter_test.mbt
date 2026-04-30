@@ -511,17 +511,17 @@ test "let evaluates bindings in parallel" {
     #|(begin
     #|  (define x 5)
     #|  (let ((x 10)
-    #|        (y x))  ; y gets outer x (5), not let's x (10)
+    #|        (y x))
     #|    (+ x y)))
-  eval_string(parallel_bindings, content=15) // 10 + 5 = 15
+  eval_string(parallel_bindings, content=15) // y gets outer x (5), not let's x (10); 10 + 5 = 15
 
   // Nested let with parallel evaluation
   let nested_parallel =
     #|(let ((x 1))
-    #|  (let ((x 2) (y x))  ; y gets outer x (1)
-    #|    (let ((x 3) (z x))  ; z gets middle x (2)
+    #|  (let ((x 2) (y x))
+    #|    (let ((x 3) (z x))
     #|      (+ x (+ y z)))))
-  eval_string(nested_parallel, content=6) // 3 + 1 + 2 = 6
+  eval_string(nested_parallel, content=6) // y gets outer x (1), z gets middle x (2); 3 + 1 + 2 = 6
 }
 
 ///|
@@ -529,9 +529,9 @@ test "let* evaluates bindings sequentially" {
   // Basic sequential binding
   let sequential_basic =
     #|(let* ((x 10)
-    #|        (y x))  ; y gets x from this let*
+    #|        (y x))
     #|   (+ x y))
-  eval_string(sequential_basic, content=20) // 10 + 10 = 20
+  eval_string(sequential_basic, content=20) // y gets x from this let*; 10 + 10 = 20
 
   // Multiple sequential dependencies
   let sequential_multiple =
@@ -546,9 +546,9 @@ test "let* evaluates bindings sequentially" {
     #|(begin
     #|  (define x 1)
     #|  (let* ((x 10)
-    #|         (y x))  ; y gets the new x (10)
+    #|         (y x))
     #|    (+ x y)))
-  eval_string(sequential_shadow, content=20)
+  eval_string(sequential_shadow, content=20) // y gets the new x (10); 10 + 10 = 20
 }
 
 ///|
