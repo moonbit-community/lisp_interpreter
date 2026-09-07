@@ -3,17 +3,29 @@
 ///|
 test "parse extra tokens" {
   let input = "(hello) world"
-  json_inspect(try? @lisp_interpreter.parse_sexp(input), content={
-    "Err": ["UnmatchedParens", "unexpected tokens at the end"],
-  })
+  try @lisp_interpreter.parse_sexp(input) catch {
+    @lisp_interpreter.UnmatchedParens(_) as err =>
+      json_inspect(err, content=[
+        "UnmatchedParens", "unexpected tokens at the end",
+      ])
+    err => fail("unexpected error: \{err}")
+  } noraise {
+    _ => fail("expected parse_sexp to raise")
+  }
 }
 
 ///|
 test "parse unexpected closing paren" {
   let input = ")hello"
-  json_inspect(try? @lisp_interpreter.parse_sexp(input), content={
-    "Err": ["UnexpectedParens", "unexpected closing parenthesis"],
-  })
+  try @lisp_interpreter.parse_sexp(input) catch {
+    @lisp_interpreter.UnexpectedParens(_) as err =>
+      json_inspect(err, content=[
+        "UnexpectedParens", "unexpected closing parenthesis",
+      ])
+    err => fail("unexpected error: \{err}")
+  } noraise {
+    _ => fail("expected parse_sexp to raise")
+  }
 }
 
 ///|
@@ -40,20 +52,30 @@ test "parse nested" {
 ///|
 test "parse error" {
   let input = "(hello (world"
-  inspect(
-    try? @lisp_interpreter.parse_sexp(input),
-    content=(
-      #|Err(UnmatchedParens("missing closing parenthesis"))
-    ),
-  )
+  try @lisp_interpreter.parse_sexp(input) catch {
+    @lisp_interpreter.UnmatchedParens(_) as err =>
+      inspect(
+        err,
+        content=(
+          #|UnmatchedParens("missing closing parenthesis")
+        ),
+      )
+    err => fail("unexpected error: \{err}")
+  } noraise {
+    _ => fail("expected parse_sexp to raise")
+  }
 }
 
 ///|
 test "parse empty" {
   let input = ""
-  json_inspect(try? @lisp_interpreter.parse_sexp(input), content={
-    "Err": "UnexpectedEOF",
-  })
+  try @lisp_interpreter.parse_sexp(input) catch {
+    @lisp_interpreter.UnexpectedEOF as err =>
+      json_inspect(err, content="UnexpectedEOF")
+    err => fail("unexpected error: \{err}")
+  } noraise {
+    _ => fail("expected parse_sexp to raise")
+  }
 }
 
 ///|

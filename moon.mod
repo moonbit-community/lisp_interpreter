@@ -1,0 +1,17 @@
+name = "bobzhang/lisp_interpreter"
+
+version = "0.1.1"
+
+readme = "README.md"
+
+repository = "https://github.com/moonbit-community/lisp_interpreter"
+
+license = "Apache-2.0"
+
+keywords = [ ]
+
+description = ""
+
+options(
+  "alert-list": "+test_import_all",
+)

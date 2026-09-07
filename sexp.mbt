@@ -5,6 +5,15 @@ pub(all) enum Sexp {
 } derive(Debug, Eq, ToJson)
 
 ///|
+pub extend Sexp with @debug.Debug::{to_repr}
+
+///|
+pub extend Sexp with Eq::{equal, not_equal}
+
+///|
+pub extend Sexp with ToJson::{to_json}
+
+///|
 /// TODO(upstream):
 /// Warning: The type 'ParseError' does not occur in public signature of 
 /// current package, consider marking it as `priv`
@@ -20,6 +29,12 @@ pub suberror ParseError {
 } derive(Debug, ToJson)
 
 ///|
+pub extend ParseError with @debug.Debug::{to_repr}
+
+///|
+pub extend ParseError with ToJson::{to_json}
+
+///|
 priv enum Token {
   Lparen
   RParen
@@ -27,7 +42,7 @@ priv enum Token {
 }
 
 ///|
-impl ToJson for Token with to_json(self) {
+impl ToJson for Token with fn to_json(self) {
   match self {
     Lparen => "("
     RParen => ")"
@@ -78,7 +93,7 @@ priv struct Lexer {
 
 ///|
 fn Lexer::new(input : String) -> Lexer {
-  { input, pos: 0 }
+  { input, pos: 0, }
 }
 
 ///|
@@ -164,14 +179,15 @@ fn Lexer::decode_string(self : Lexer) -> Token raise {
 test "decode_string" {
   fn decode_string(s) {
     Ok(Lexer::new(s).decode_string()) catch {
-      @builtin.Failure(err) => Err(err.split("FAILED:")[1:].to_string()) // FIXME: upstream
+      @builtin.Failure(err) =>
+        Err(err.split("FAILED:").drop(1).join("FAILED:").trim().to_owned()) // FIXME: upstream
       err => Err(err.to_string())
     }
   }
 
   json_inspect(decode_string("\"hello\""), content={ "Ok": "\"hello\"" })
   json_inspect(decode_string("\"hello\n\""), content={
-    "Err": "[\" unexpected newline in string\"]",
+    "Err": "unexpected newline in string",
   })
   json_inspect(
     decode_string(
@@ -263,7 +279,8 @@ test "decode_atom" {
 test "decode" {
   fn tokenize(s) {
     Ok(Lexer::new(s).decode()) catch {
-      @builtin.Failure(err) => Err(err.split("FAILED:")[1:].to_string()) // FIXME: upstream
+      @builtin.Failure(err) =>
+        Err(err.split("FAILED:").drop(1).join("FAILED:").trim().to_owned()) // FIXME: upstream
       err => Err(err.to_string())
     }
   }
@@ -297,7 +314,8 @@ test "decode" {
 test {
   fn tokenize(s) {
     Ok(Lexer::new(s).decode()) catch {
-      @builtin.Failure(err) => Err(err.split("FAILED:")[1:].to_string()) // FIXME: upstream
+      @builtin.Failure(err) =>
+        Err(err.split("FAILED:").drop(1).join("FAILED:").trim().to_owned()) // FIXME: upstream
       err => Err(err.to_string())
     }
   }
@@ -354,11 +372,17 @@ test "tokenize unicode emoji" {
 // }
 
 ///|
-pub impl Show for Sexp with output(self, logger) {
+pub impl Show for Sexp with fn output(self, logger) {
   logger.write_string(@debug.render(self.to_repr(), max_depth=2147483647))
 }
 
 ///|
-pub impl Show for ParseError with output(self, logger) {
+pub extend Sexp with Show::{to_string, output}
+
+///|
+pub impl Show for ParseError with fn output(self, logger) {
   logger.write_string(@debug.render(self.to_repr(), max_depth=2147483647))
 }
+
+///|
+pub extend ParseError with Show::{to_string, output}
