@@ -19,6 +19,10 @@ pub suberror ParseError {
   UnexpectedParens(String)
   UnexpectedEOF
 } derive(ToJson, @debug.Debug)
+pub fn ParseError::output(Self, &Logger) -> Unit
+pub fn ParseError::to_json(Self) -> Json
+pub fn ParseError::to_repr(Self) -> @debug.Repr
+pub fn ParseError::to_string(Self) -> String
 pub impl Show for ParseError
 
 // Types and methods
@@ -26,12 +30,21 @@ pub struct Env {
   mut inner : @sorted_map.SortedMap[String, Value]
 } derive(@debug.Debug)
 pub fn Env::builtin() -> Self
+pub fn Env::output(Self, &Logger) -> Unit
+pub fn Env::to_repr(Self) -> @debug.Repr
+pub fn Env::to_string(Self) -> String
 pub impl Show for Env
 
 pub(all) enum Sexp {
   Atom(String)
   List(Array[Sexp])
 } derive(Eq, ToJson, @debug.Debug)
+pub fn Sexp::equal(Self, Self) -> Bool
+pub fn Sexp::not_equal(Self, Self) -> Bool
+pub fn Sexp::output(Self, &Logger) -> Unit
+pub fn Sexp::to_json(Self) -> Json
+pub fn Sexp::to_repr(Self) -> @debug.Repr
+pub fn Sexp::to_string(Self) -> String
 pub impl Show for Sexp
 
 pub(all) enum Value {
@@ -41,10 +54,13 @@ pub(all) enum Value {
   Function(Array[String], Sexp, Env)
   BuiltinFunction(String)
 } derive(@debug.Debug)
+pub fn Value::output(Self, &Logger) -> Unit
+pub fn Value::to_json(Self) -> Json
+pub fn Value::to_repr(Self) -> @debug.Repr
+pub fn Value::to_string(Self) -> String
 pub impl Show for Value
 pub impl ToJson for Value
 
 // Type aliases
 
 // Traits
-

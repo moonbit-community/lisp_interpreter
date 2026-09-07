@@ -8,7 +8,10 @@ pub(all) enum Value {
 } derive(Debug)
 
 ///|
-pub impl ToJson for Value with to_json(self) {
+pub extend Value with @debug.Debug::{to_repr}
+
+///|
+pub impl ToJson for Value with fn to_json(self) {
   match self {
     Number(n) => n.to_json()
     Boolean(b) => Json::boolean(b)
@@ -19,9 +22,15 @@ pub impl ToJson for Value with to_json(self) {
 }
 
 ///|
+pub extend Value with ToJson::{to_json}
+
+///|
 pub struct Env {
   mut inner : @sorted_map.SortedMap[String, Value]
 } derive(Debug)
+
+///|
+pub extend Env with @debug.Debug::{to_repr}
 
 // ///|
 // fn Environment::new() -> Environment {
@@ -41,7 +50,7 @@ fn Env::get(self : Env, key : String) -> Value? {
 
 ///|
 fn Env::fork(self : Env) -> Env {
-  { inner: self.inner }
+  { inner: self.inner, }
 }
 
 ///|
@@ -54,8 +63,11 @@ priv suberror EvalError {
 } derive(Debug)
 
 ///|
+extend EvalError with @debug.Debug::{to_repr}
+
+///|
 pub fn Env::builtin() -> Self {
-  let env = { inner: @sorted_map.SortedMap::new() }
+  let env = { inner: @sorted_map.SortedMap::new(), }
   env.set(".", BuiltinFunction("dummy"))
   env.set("+", BuiltinFunction("+"))
   env.set("-", BuiltinFunction("-"))
@@ -448,16 +460,22 @@ fn is_truthy(val : Value) -> Bool {
 }
 
 ///|
-pub impl Show for Value with output(self, logger) {
+pub impl Show for Value with fn output(self, logger) {
   logger.write_string(@debug.render(self.to_repr(), max_depth=2147483647))
 }
 
 ///|
-pub impl Show for Env with output(self, logger) {
+pub extend Value with Show::{to_string, output}
+
+///|
+pub impl Show for Env with fn output(self, logger) {
   logger.write_string(@debug.render(self.to_repr(), max_depth=2147483647))
 }
 
 ///|
-impl Show for EvalError with output(self, logger) {
+pub extend Env with Show::{to_string, output}
+
+///|
+impl Show for EvalError with fn output(self, logger) {
   logger.write_string(@debug.render(self.to_repr(), max_depth=2147483647))
 }
