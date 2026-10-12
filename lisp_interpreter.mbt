@@ -1,6 +1,6 @@
 ///|
 pub(all) enum Value {
-  Number(Int)
+  Number(Int32)
   Boolean(Bool)
   Symbol(String)
   Function(Array[String], Sexp, Env)
@@ -13,7 +13,7 @@ pub extend Value with @debug.Debug::{to_repr}
 ///|
 pub impl ToJson for Value with fn to_json(self) {
   match self {
-    Number(n) => n.to_json()
+    Number(n) => Json(n)
     Boolean(b) => Json::boolean(b)
     Symbol(s) => Json::string(s)
     Function(_, _, _) => Json::string("<function>")
@@ -101,7 +101,7 @@ fn Sexp::eval(self : Sexp, env : Env) -> Value raise EvalError {
     Atom("false") => Value::Boolean(false)
     Atom(token) => {
       // Try parsing as an integer
-      if token is ['0'..='9', ..] || token is ['-', '0'..='9', ..] {
+      if token is ['0'..<='9', ..] || token is ['-', '0'..<='9', ..] {
         try {
           let num = @string.parse_int(token)
           return Value::Number(num)
