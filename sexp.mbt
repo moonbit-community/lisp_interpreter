@@ -88,7 +88,7 @@ fn parse_tokens(
 ///|
 priv struct Lexer {
   input : String
-  mut pos : Int //
+  mut pos : Int32 //
 }
 
 ///|
