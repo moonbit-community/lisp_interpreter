@@ -48,7 +48,7 @@ pub fn Sexp::to_string(Self) -> String
 pub impl Show for Sexp
 
 pub(all) enum Value {
-  Number(Int)
+  Number(Int32)
   Boolean(Bool)
   Symbol(String)
   Function(Array[String], Sexp, Env)

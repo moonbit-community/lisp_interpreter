@@ -100,7 +100,7 @@ fn Lexer::new(input : String) -> Lexer {
 fn Lexer::view(self : Lexer) -> StringView {
   let input = self.input
   let pos = self.pos
-  input.view(start_offset=pos)
+  input.clamped_view(start=pos)
 }
 
 ///|
@@ -110,9 +110,9 @@ fn Lexer::update_view(self : Lexer, view : StringView) -> Unit {
 
 ///|
 fn Lexer::update_view_with_token(self : Lexer, view : StringView) -> String {
-  let consumed = self.input.view(
-    start_offset=self.pos,
-    end_offset=view.start_offset(),
+  let consumed = self.input.clamped_view(
+    start=self.pos,
+    end=view.start_offset(),
   )
   self.pos = view.start_offset()
   consumed.to_owned()
